@@ -1,2 +1,33 @@
+// MIXINS && VARIABLES
+
+@mixin basic-box-shadow($color) {
+  box-shadow: 3px 3px 5px 5px $color, 1px 0px 1px $color;
+}
+
+$main-color: blue;
+$accent-color: darken($main-color, 20%);
+$background-color: lighten($main-color, 40%);
+
+// LAYOUT
+
+body {
+  background-color: black;
+  color: $main-color;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// COMPONENTS
 
 
+// TYPOGRAPHY
+h2 {
+  font-size: 3rem;
+}
