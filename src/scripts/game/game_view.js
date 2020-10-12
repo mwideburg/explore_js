@@ -5,8 +5,8 @@ function GameView(scene) {
     this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.z = 5;
     this.renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(this.renderer.domElement);
 
     
 }
@@ -62,8 +62,9 @@ GameView.prototype.controls = () => {
 }
 
 GameView.prototype.animate = () => {
-    this.controls();
-    requestAnimationFrame(this.animate.bind(this));
+    const that = this;
+    this.controls;
+    requestAnimationFrame(that.animate());
     if (moveForward) { camera.position.z -= 0.5; }
     if (moveBackward) { camera.position.z += 0.5; }
     if (moveLeft) { camera.position.x -= 0.5; }
