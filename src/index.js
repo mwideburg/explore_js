@@ -10,8 +10,10 @@ let camera, scene, renderer, mixer;
 let clouds
 var geometry, material, mesh;
 let enemies = []
+let sentinels
 let controls;
 let group
+let cubeC
 let objects = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
@@ -172,7 +174,7 @@ function init() {
 
 
     // SENTINELS
-    const sentinels = new THREE.Group()
+    
     for (let i = 0; i < 10; i++) {
         const sentinel = new Sentinel;
 
@@ -186,10 +188,10 @@ function init() {
         light.position.z = sentinel.position.z
         sent_light.add(sentinel)
         sent_light.add(light)
-        sentinels.add(sent_light)
-        enemies.push(sent_light)
+        scene.add(sent_light)
+        enemies.push(sentinel)
     }
-    scene.add(sentinels)
+    
     
     
    
@@ -256,6 +258,7 @@ function init() {
     // CUBES
     // Come back and make this a constructor class
     geometry = new THREE.BoxBufferGeometry(100, 100, 100);
+    let geometry2 = new THREE.BoxBufferGeometry(10, 10, 10);
     material = new THREE.MeshBasicMaterial({ color: 0x00f000 });
 
     var cubeA = new THREE.Mesh(geometry, material);
@@ -263,6 +266,8 @@ function init() {
 
     var cubeB = new THREE.Mesh(geometry, material);
     cubeB.position.set(20, 200, 0);
+    cubeC = new THREE.Mesh(geometry2, material);
+    cubeC.position.set(20, 10, 600);
     
 
     group = new THREE.Group();
@@ -271,6 +276,8 @@ function init() {
     objects.push(cubeA)
     objects.push(cubeB)
     scene.add(group);
+
+    scene.add(cubeC)
     
     // ANIMATION TRIAL
 
@@ -355,18 +362,27 @@ function init() {
         
         move.copy(dir).multiplyScalar(speed * clock.getDelta());
         
+        enemies.forEach((sent) => {
+            pos.copy(sent.position).add(move);
 
-        pos.copy(sentinels.position).add(move);
 
-        if (Math.abs(pos.length()) >= lim) {
+            if (Math.abs(pos.length()) >= lim) {
 
-            
-            dir.negate();
-           
 
-        }
-        sentinels.position.copy(pos);
-        lookAt.copy(pos).add(dir);
+                dir.negate();
+
+
+            }
+
+            sent.position.copy(pos);
+
+            // console.log(sent.children[0].position)
+            lookAt.copy(pos).add(dir);
+
+
+        })
+        
+        
         // group.lookAt(lookAt);
 
         // renderer.render(scene, camera);
@@ -401,7 +417,26 @@ function onWindowResize() {
 }
 
 
-
+function checkCollisions(pos){
+    // debugger
+    enemies.forEach((enemy) => {
+    //     let enemy = sent.position
+        
+        const objPos = enemy.position
+        
+        if (
+            (pos.x >= (objPos.x - 15) && pos.x <= (objPos.x + 15)) &&
+            (pos.y >= (objPos.y - 15) && pos.y <= (objPos.y + 15)) &&
+            (pos.z >= (objPos.z - 15) && pos.z <= (objPos.z + 15))
+        ){
+            
+            console.log("YOUVE BEEN HIT")
+            console.log(enemy)
+            console.log(pos)
+        }})
+        
+    
+}
 
 
 // Animate
@@ -412,9 +447,13 @@ function animate() {
     // This will give all the PointLock controls
     if (controlsEnabled) {
         raycaster.ray.origin.copy(controls.getObject().position);
+        let pos = raycaster.ray.origin.copy(controls.getObject().position);
+        checkCollisions(pos)
         raycaster.ray.origin.y -= 10;
         var intersections = raycaster.intersectObjects(objects);
+       
         var isOnObject = intersections.length > 0;
+       
         var time = performance.now();
         var delta = (time - prevTime) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
@@ -436,6 +475,7 @@ function animate() {
             controls.getObject().position.y = 10;
             canJump = true;
         }
+        
         prevTime = time;
     }
     
