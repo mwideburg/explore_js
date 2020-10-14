@@ -6,6 +6,7 @@ import { Group } from 'three';
 // import Cloud from './scripts/objects/clouds';
 import Sentinel from './scripts/objects/sentinels';
 import Enemy from './scripts/enemies/enemy1';
+import Orb from './scripts/objects/orb';
 
 
 let camera, scene, renderer, mixer;
@@ -17,7 +18,7 @@ let enemy
 let controls;
 let group
 let cubeC
-
+let vector = new THREE.Vector3(0, 0, - 1);
 let objects = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
@@ -183,8 +184,25 @@ function init() {
     document.addEventListener('keydown', onKeyDown, false);
     document.addEventListener('keyup', onKeyUp, false);
     raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, - 1, 0), 0, 10);
-    
-    
+    document.addEventListener("mousedown", shootOrb, true)
+    function shootOrb(dir){
+        console.log("shoot")
+        let orbPos = raycaster.ray.origin.copy(controls.getObject().position);
+        debugger
+        let traj = camera.getWorldDirection(vector)
+        console.log(traj)
+        let orb = new Orb();
+        
+        orb.position.x = orbPos.x
+        orb.position.y = orbPos.y
+        orb.position.z = orbPos.z
+        scene.add(orb)
+       
+        
+
+    }
+
+
     
     
     
@@ -208,6 +226,7 @@ function init() {
         sent_light.add(light)
         scene.add(sent_light)
         orbs.push(sentinel)
+        orb_lights.push(sent_light)
     }
     
     
@@ -300,13 +319,17 @@ function init() {
     // ENEMY
     setTimeout(() => {
         enemy = new Enemy();
-        sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
-        sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
-        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
-        
-    }, 3000)
+        enemy.position.x = 0;
+        enemy.position.z = 500
+        enemy.position.y = Math.floor(Math.random() * 30) + 5;
+        scene.add(enemy)
+    }, 10000)
 
     
+
+    // SHOOTING
+
+
 
 
 
