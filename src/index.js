@@ -3,12 +3,13 @@ import Trunk from './scripts/objects/trunk'
 import Top from './scripts/objects/top'
 import Top2 from './scripts/objects/top2'
 import { Group } from 'three';
-import Sentinal from './scripts/objects/sentinals';
+import Sentinal from './scripts/objects/rain_drops';
 
 let camera, scene, renderer, mixer;
 let cubeC
 let sentinals
 let controls;
+let group
 let objects = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
@@ -260,7 +261,7 @@ function init() {
     cubeC = new THREE.Mesh(geometry, material);
     cubeC.position.set(20, 150, 75);
 
-    var group = new THREE.Group();
+    group = new THREE.Group();
     group.add(cubeA);
     group.add(cubeB);
     objects.push(cubeA)
@@ -336,6 +337,37 @@ function init() {
     document.body.appendChild(renderer.domElement);
     //
     window.addEventListener('resize', onWindowResize, false);
+
+
+    var lim = 100;
+    var clock = new THREE.Clock();
+    var speed = 20;
+    var dir = new THREE.Vector3(0, 0, 1).normalize();
+    var move = new THREE.Vector3();
+    var pos = new THREE.Vector3();
+    var lookAt = new THREE.Vector3();
+
+    renderer.setAnimationLoop(() => {
+        debugger
+        move.copy(dir).multiplyScalar(speed * clock.getDelta());
+        
+
+        pos.copy(group.position).add(move);
+
+        if (Math.abs(pos.length()) >= lim) {
+
+            
+            dir.negate();
+           
+
+        }
+        group.position.copy(pos);
+        lookAt.copy(pos).add(dir);
+        // group.lookAt(lookAt);
+
+        // renderer.render(scene, camera);
+    })
+
 }
 
 
@@ -347,13 +379,37 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+// function moveCube(){
+//     setTimeout(() => {
+//         let i = 20
+//         let x = true
+//             if(x){
+//                 group.position.x -= 1
+//                 i -= 1
+//                 if(i === 2){
+//                     x = false
+//                 }
+//             }else if(!x){
+//                 debugger
+//                 group.position.x += 1
+//                 i += 1
+//                 if (i === 21) {
+//                     x = false
+//                 }
+//             }
+
+//     }, 10000)
+
+    
+// }
+
 
 
 // Animate
 function animate() {
     requestAnimationFrame(animate);
     
-
+    // moveCube();
     // This will give all the PointLock controls
     if (controlsEnabled) {
         raycaster.ray.origin.copy(controls.getObject().position);
