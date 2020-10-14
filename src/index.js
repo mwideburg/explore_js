@@ -6,8 +6,9 @@ import { Group } from 'three';
 import Sentinal from './scripts/objects/rain_drops';
 
 let camera, scene, renderer, mixer;
-let cubeC
-let sentinals
+let clouds
+var geometry, material, mesh;
+let sentinals = []
 let controls;
 let group
 let objects = [];
@@ -169,23 +170,7 @@ function init() {
     /// DESIGN
 
 
-    // GRASS
-
-    // Come back and make this a constructor
-    var loader = new THREE.TextureLoader();
-    var groundTexture = loader.load('./src/images/grass.jpg');
-    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-    groundTexture.repeat.set(25, 25);
-    groundTexture.anisotropy = 16;
-    groundTexture.encoding = THREE.sRGBEncoding;
-
-    var groundMaterial = new THREE.MeshLambertMaterial({ map: groundTexture });
-
-    var mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), groundMaterial);
-    mesh.position.y = 0;
-    mesh.rotation.x = - Math.PI / 2;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
+    
     
    
 
@@ -233,33 +218,32 @@ function init() {
 
     // Blue things in the sky????/
     // Come back and make this a constructor
-    sentinals = new THREE.Group();
+    clouds = new THREE.Group();
     for (var i = 0; i < 250; i++) {
         var geometry = new THREE.ConeGeometry(5, 20, 32);
         var material = new THREE.MeshBasicMaterial({ color: "rgb(0, 202, 246)" });
-        var sentinal = new THREE.Mesh(geometry, material);
+        var cloud = new THREE.Mesh(geometry, material);
 
-        sentinal.position.x = Math.floor(Math.random() * 20 - 10) * 60;
-        sentinal.position.z = Math.floor(Math.random() * 20 - 10) * 60;
-        sentinal.position.y = Math.floor(Math.random() * 30) + 300;
-        scene.add(sentinal)
-        sentinals.add(mesh);
-        objects.push(sentinal)
+        cloud.position.x = Math.floor(Math.random() * 20 - 10) * 60;
+        cloud.position.z = Math.floor(Math.random() * 20 - 10) * 60;
+        cloud.position.y = Math.floor(Math.random() * 30) + 300;
+        scene.add(cloud)
+        clouds.add(mesh);
+        objects.push(cloud)
     }
     scene.add(sentinals)
 
-    
+    // CUBES
     // Come back and make this a constructor class
-    var geometry = new THREE.BoxBufferGeometry(100, 100, 100);
-    var material = new THREE.MeshBasicMaterial({ color: 0x00f000 });
+    geometry = new THREE.BoxBufferGeometry(100, 100, 100);
+    material = new THREE.MeshBasicMaterial({ color: 0x00f000 });
 
     var cubeA = new THREE.Mesh(geometry, material);
-    cubeA.position.set(200, 150, 0);
+    cubeA.position.set(200, 200, 0);
 
     var cubeB = new THREE.Mesh(geometry, material);
-    cubeB.position.set(20, 150, 0);
-    cubeC = new THREE.Mesh(geometry, material);
-    cubeC.position.set(20, 150, 75);
+    cubeB.position.set(20, 200, 0);
+    
 
     group = new THREE.Group();
     group.add(cubeA);
@@ -267,7 +251,7 @@ function init() {
     objects.push(cubeA)
     objects.push(cubeB)
     scene.add(group);
-    scene.add(cubeC);
+    
     // ANIMATION TRIAL
 
     // let positionKF = new THREE.VectorKeyframeTrack('.position', [0, 1, 2], [0, 0, 50, 100, 150, 100, 50, 0])
@@ -348,7 +332,7 @@ function init() {
     var lookAt = new THREE.Vector3();
 
     renderer.setAnimationLoop(() => {
-        debugger
+        
         move.copy(dir).multiplyScalar(speed * clock.getDelta());
         
 
@@ -367,6 +351,23 @@ function init() {
 
         // renderer.render(scene, camera);
     })
+    // GRASS
+
+    var loader = new THREE.TextureLoader();
+    var groundTexture = loader.load('./src/images/grass.jpg');
+    groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+    groundTexture.repeat.set(25, 25);
+    groundTexture.anisotropy = 16;
+    groundTexture.encoding = THREE.sRGBEncoding;
+
+    var groundMaterial = new THREE.MeshLambertMaterial({ map: groundTexture });
+
+    mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), groundMaterial);
+    mesh.position.y = 0;
+    mesh.rotation.x = - Math.PI / 2;
+    mesh.receiveShadow = true;
+
+    scene.add(mesh);
 
 }
 
@@ -379,29 +380,7 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// function moveCube(){
-//     setTimeout(() => {
-//         let i = 20
-//         let x = true
-//             if(x){
-//                 group.position.x -= 1
-//                 i -= 1
-//                 if(i === 2){
-//                     x = false
-//                 }
-//             }else if(!x){
-//                 debugger
-//                 group.position.x += 1
-//                 i += 1
-//                 if (i === 21) {
-//                     x = false
-//                 }
-//             }
 
-//     }, 10000)
-
-    
-// }
 
 
 
@@ -409,7 +388,7 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame(animate);
     
-    // moveCube();
+
     // This will give all the PointLock controls
     if (controlsEnabled) {
         raycaster.ray.origin.copy(controls.getObject().position);
