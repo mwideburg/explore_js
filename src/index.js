@@ -3,12 +3,13 @@ import Trunk from './scripts/objects/trunk'
 import Top from './scripts/objects/top'
 import Top2 from './scripts/objects/top2'
 import { Group } from 'three';
-import Sentinal from './scripts/objects/rain_drops';
+// import Cloud from './scripts/objects/clouds';
+import Sentinel from './scripts/objects/sentinels';
 
 let camera, scene, renderer, mixer;
 let clouds
 var geometry, material, mesh;
-let sentinals = []
+let enemies = []
 let controls;
 let group
 let objects = [];
@@ -170,6 +171,25 @@ function init() {
     /// DESIGN
 
 
+    // SENTINELS
+    const sentinels = new THREE.Group()
+    for (let i = 0; i < 10; i++) {
+        const sentinel = new Sentinel;
+
+        const light = new THREE.PointLight("rgb(255, 222, 84)", 15, 100);
+        const sent_light = new THREE.Group()
+        sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
+        sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
+        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
+        light.position.x = sentinel.position.x
+        light.position.y = sentinel.position.y
+        light.position.z = sentinel.position.z
+        sent_light.add(sentinel)
+        sent_light.add(light)
+        sentinels.add(sent_light)
+        enemies.push(sent_light)
+    }
+    scene.add(sentinels)
     
     
    
@@ -178,7 +198,7 @@ function init() {
     /// TREESSSS
 
 
-    for (var i = 0; i < 75; i++) {
+    for (let i = 0; i < 75; i++) {
         var trunk = new Trunk;
         var top = new Top;
 
@@ -231,7 +251,7 @@ function init() {
         clouds.add(mesh);
         objects.push(cloud)
     }
-    scene.add(sentinals)
+    scene.add(clouds)
 
     // CUBES
     // Come back and make this a constructor class
@@ -323,9 +343,9 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 
 
-    var lim = 100;
+    var lim = 400;
     var clock = new THREE.Clock();
-    var speed = 20;
+    var speed = 50;
     var dir = new THREE.Vector3(0, 0, 1).normalize();
     var move = new THREE.Vector3();
     var pos = new THREE.Vector3();
@@ -336,7 +356,7 @@ function init() {
         move.copy(dir).multiplyScalar(speed * clock.getDelta());
         
 
-        pos.copy(group.position).add(move);
+        pos.copy(sentinels.position).add(move);
 
         if (Math.abs(pos.length()) >= lim) {
 
@@ -345,7 +365,7 @@ function init() {
            
 
         }
-        group.position.copy(pos);
+        sentinels.position.copy(pos);
         lookAt.copy(pos).add(dir);
         // group.lookAt(lookAt);
 
