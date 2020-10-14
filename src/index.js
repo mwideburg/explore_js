@@ -5,20 +5,38 @@ import Top2 from './scripts/objects/top2'
 import { Group } from 'three';
 // import Cloud from './scripts/objects/clouds';
 import Sentinel from './scripts/objects/sentinels';
+import Enemy from './scripts/enemies/enemy1';
+
 
 let camera, scene, renderer, mixer;
 let clouds
 var geometry, material, mesh;
-let enemies = []
+let orbs = []
 let sentinels
+let enemy
 let controls;
 let group
 let cubeC
+
 let objects = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
 let instructions = document.getElementById('instructions');
 
+
+// PLAYEWR SET UP
+
+let orbCount = 0
+let ammo = 10
+let counterDisp = document.getElementById('orbCounter')
+let ammoCount = document.getElementById('ammoCount')
+
+
+function updateDisplay() {
+    counterDisp.innerHTML = orbCount;
+    ammoCount.innerHTML = ammo;
+};
+updateDisplay()
 
 // https://www.html5rocks.com/en/tutorials/pointerlock/intro/
 var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
@@ -189,7 +207,7 @@ function init() {
         sent_light.add(sentinel)
         sent_light.add(light)
         scene.add(sent_light)
-        enemies.push(sentinel)
+        orbs.push(sentinel)
     }
     
     
@@ -279,14 +297,16 @@ function init() {
 
     scene.add(cubeC)
     
-    // ANIMATION TRIAL
+    // ENEMY
+    setTimeout(() => {
+        enemy = new Enemy();
+        sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
+        sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
+        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
+        
+    }, 3000)
 
-    // let positionKF = new THREE.VectorKeyframeTrack('.position', [0, 1, 2], [0, 0, 50, 100, 150, 100, 50, 0])
-    // let clip = new THREE.AnimationClip('Move', 100, [positionKF])
-    // mixer = new THREE.AnimationMixer(group)
-
-    // let clipAction = mixer.clipAction(clip)
-    // clipAction.play();
+    
 
 
 
@@ -352,7 +372,7 @@ function init() {
 
     var lim = 400;
     var clock = new THREE.Clock();
-    var speed = 50;
+    var speed = 30;
     var dir = new THREE.Vector3(0, 0, 1).normalize();
     var move = new THREE.Vector3();
     var pos = new THREE.Vector3();
@@ -362,7 +382,7 @@ function init() {
         
         move.copy(dir).multiplyScalar(speed * clock.getDelta());
         
-        enemies.forEach((sent) => {
+        orbs.forEach((sent) => {
             pos.copy(sent.position).add(move);
 
 
@@ -376,16 +396,8 @@ function init() {
 
             sent.position.copy(pos);
 
-            // console.log(sent.children[0].position)
             lookAt.copy(pos).add(dir);
-
-
         })
-        
-        
-        // group.lookAt(lookAt);
-
-        // renderer.render(scene, camera);
     })
     // GRASS
 
@@ -419,23 +431,44 @@ function onWindowResize() {
 
 function checkCollisions(pos){
     // debugger
-    enemies.forEach((enemy) => {
+    orbs.forEach((enemy, index) => {
     //     let enemy = sent.position
         
         const objPos = enemy.position
         
         if (
-            (pos.x >= (objPos.x - 15) && pos.x <= (objPos.x + 15)) &&
-            (pos.y >= (objPos.y - 15) && pos.y <= (objPos.y + 15)) &&
-            (pos.z >= (objPos.z - 15) && pos.z <= (objPos.z + 15))
+            (pos.x >= (objPos.x - 10) && pos.x <= (objPos.x + 10)) &&
+            (pos.y >= (objPos.y - 10) && pos.y <= (objPos.y + 10)) &&
+            (pos.z >= (objPos.z - 10) && pos.z <= (objPos.z + 10))
         ){
+            orbCount ++
+          
             
-            console.log("YOUVE BEEN HIT")
-            console.log(enemy)
-            console.log(pos)
+            updateDisplay();
+            remove(index)
+
         }})
+    if (cubeC){
+        let ammoPos = cubeC.position
+        if (
+            (pos.x >= (ammoPos.x - 10) && pos.x <= (ammoPos.x + 10)) &&
+            (pos.y >= (ammoPos.y - 10) && pos.y <= (ammoPos.y + 10)) &&
+            (pos.z >= (ammoPos.z - 10) && pos.z <= (ammoPos.z + 10))
+        ) {
+            ammo += 30
+        }
+
+    }
+    
         
     
+}
+
+function remove(index){
+    const object = scene.getObjectById(orbs[index].parent.id)
+    
+    scene.remove(object)
+    delete orbs[index]
 }
 
 
@@ -443,7 +476,7 @@ function checkCollisions(pos){
 function animate() {
     requestAnimationFrame(animate);
     
-
+    
     // This will give all the PointLock controls
     if (controlsEnabled) {
         raycaster.ray.origin.copy(controls.getObject().position);

@@ -1,5 +1,8 @@
 body{
-    margin: 0;
+	margin: 0;
+	padding: 0;
+	overflow-y: hidden;
+	font-family: sans-serif;
     
 }
 
@@ -31,12 +34,13 @@ body{
 	text-align: center;
 	cursor: pointer;
 }
-#pointer {
+#player-screen {
   position: absolute;
-  color: red;
 	width: 100%;
 	height: 100%;
-  z-index: 9;
+	margin: 0;
+	padding: 0;
+  	z-index: 9;
 }
 #aimer {
 	width: 100%;
@@ -58,3 +62,50 @@ body{
 	text-align: center;
 	cursor: pointer;
 }
+
+
+.orbs{
+	color: black;
+	font-family: sans-serif;
+	display: flex;
+	width: 155px;
+	height: 60px;
+	background: rgb(250 , 250, 250, .5);
+	justify-content: space-between;
+	align-items: center;
+	margin: 10px;
+	border-radius: 5px;
+	padding-right: 10px;
+}
+
+.orb-nums{
+	
+	font-family: sans-serif;
+	display: flex;
+	
+	justify-content: center;
+}
+
+.health{
+	position: absolute;
+	right: 15px;
+	top: 25px;
+	width: 155px;
+	height: 25px;
+	border-radius: 5px;
+	background: rgba(20, 240, 166, 0.884);
+
+}
+.ammoCount{
+	position: absolute;
+	color: white;
+	text-align: center;
+	left: 15px;
+	bottom: 25px;
+	width: 55px;
+	height: 45px;
+	border-radius: 5px;
+	background: rgba(20, 240, 166, 0.884);
+
+}
+
