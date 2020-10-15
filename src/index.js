@@ -24,6 +24,7 @@ let raycaster;
 let blocker = document.getElementById('blocker');
 let instructions = document.getElementById('instructions');
 let orbAlive = []
+let hit = false
 
 // PLAYEWR SET UP
 
@@ -188,17 +189,25 @@ function init() {
     
     document.addEventListener("mousedown", shootOrb, true)
     function shootOrb(){
-        console.log("shoot")
-        let orbPos = raycaster.ray.origin.copy(controls.getObject().position);
-        
-        let traj = camera.getWorldDirection(vector)
-        console.log(traj)
-        let orb = new Orb();
-        
-        orb.position.copy(orbPos)
-        
-        scene.add(orb)
-        orbAlive.push(orb)
+        // console.log("shoot")
+        if(ammo > 0){
+
+
+            let orbPos = raycaster.ray.origin.copy(controls.getObject().position);
+            
+            let traj = camera.getWorldDirection(vector)
+            // console.log(traj)
+            let orb = new Orb();
+            
+            orb.position.copy(orbPos)
+            ammo -= 1
+            updateDisplay();
+            scene.add(orb)
+            orbAlive.push(orb)
+        }else{
+            // document.getElementById(ammoCount)
+            return null
+        }
         
         
        
@@ -307,9 +316,9 @@ function init() {
     cubeA.position.set(200, 200, 0);
 
     var cubeB = new THREE.Mesh(geometry, material);
-    cubeB.position.set(20, 200, 0);
+    cubeB.position.set(20, 200, 10);
     cubeC = new THREE.Mesh(geometry2, material);
-    cubeC.position.set(20, 10, 600);
+    cubeC.position.set(20, 10, 400);
     
 
     group = new THREE.Group();
@@ -322,13 +331,14 @@ function init() {
     scene.add(cubeC)
     
     // ENEMY
-    setTimeout(() => {
-        enemy = new Enemy();
-        enemy.position.x = 0;
-        enemy.position.z = 500
-        enemy.position.y = Math.floor(Math.random() * 30) + 5;
-        scene.add(enemy)
-    }, 10000)
+    
+    enemy = new Enemy();
+    enemy.position.x = 120;
+    enemy.position.z = 150;
+    enemy.position.y = 30;
+    enemy.health = 100;
+    scene.add(enemy)
+    
 
     
 
@@ -483,7 +493,23 @@ function checkCollisions(pos){
             (pos.y >= (ammoPos.y - 10) && pos.y <= (ammoPos.y + 10)) &&
             (pos.z >= (ammoPos.z - 10) && pos.z <= (ammoPos.z + 10))
         ) {
-            ammo += 30
+            ammo += 10
+            scene.remove(cubeC)
+            updateDisplay();
+            
+        }
+
+    }
+    if (enemy.health > 0) {
+        let enemyPos = enemy.position
+        if (
+            (pos.x >= (enemyPos.x - 50) && pos.x <= (enemyPos.x + 50)) &&
+            (pos.y >= (enemyPos.y - 50) && pos.y <= (enemyPos.y + 50)) &&
+            (pos.z >= (enemyPos.z - 50) && pos.z <= (enemyPos.z + 50))
+        ) {
+            console.log("hit")
+            hitUser()
+
         }
 
     }
@@ -492,19 +518,49 @@ function checkCollisions(pos){
     
 }
 
-function animateOrb(orb) {
+function checkOrbCollision(orb, index, object){
+    let pos = orb.position
+    let enemyPos = object.position
+    debugger
+    let size = object.size
+    if (
+        (pos.x >= (enemyPos.x - 50) && pos.x <= (enemyPos.x + 50)) &&
+        (pos.y >= (enemyPos.y - 50) && pos.y <= (enemyPos.y + 50)) &&
+        (pos.z >= (enemyPos.z - 50) && pos.z <= (enemyPos.z + 50))
+    ) {
+        console.log("hit")
+        scene.remove(orb)
+        delete orbAlive[index]
+        enemy.health -= 5
+        debugger
+        
+        enemy.material.color.r -= .1;
+        enemy.material.color.g += .1;
+        if(enemy.health <= 0){
+            scene.remove(enemy)
+        }
+            
+
+    }
+}
+
+function animateOrb(orb, index) {
     const traj = camera.getWorldDirection(vector)
     let person = raycaster.ray.origin.copy(controls.getObject().position);
-    console.log(traj)
+    // console.log(traj)
     // console.log(person)
     orb.position.x += (traj.x * 10)
     orb.position.z += (traj.z * 10)
+    setTimeout(() => {
+        delete orbAlive[index]
+        scene.remove(orb)
+    }, 2000)
     
 }
 function wallOstacle() {
     let traj = camera.getWorldDirection(vector)
     let person = raycaster.ray.origin.copy(controls.getObject().position);
-    console.log(traj)
+    // console.log(traj)
     // console.log(person)
     orb.position.x += Math.sin(camera.rotation.y)
     orb.position.z += Math.cos(camera.rotation.y)
@@ -518,13 +574,23 @@ function remove(index){
     delete orbs[index]
 }
 
+function hitUser(){
+    hit = true
+    console.log("HIT")
+    setTimeout(() => {
+        hit = false
+    }, 500)
+}
+
 
 // Animate
 function animate() {
     requestAnimationFrame(animate);
     if(orbAlive.length > 0){
 
-        orbAlive.forEach(orb => animateOrb(orb))
+        orbAlive.forEach((orb, index) => {animateOrb(orb, index)
+        checkOrbCollision(orb, index, enemy)
+        })
     }
     
     // This will give all the PointLock controls
@@ -549,6 +615,9 @@ function animate() {
         if (isOnObject === true) {
             velocity.y = Math.max(0, velocity.y);
             canJump = true;
+        }
+        if(hit){
+            velocity.z += 10000.0 * delta;
         }
         controls.getObject().translateX(velocity.x * delta);
         controls.getObject().translateY(velocity.y * delta);
