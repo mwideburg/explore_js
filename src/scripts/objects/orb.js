@@ -1,7 +1,7 @@
 var Orb = function (opt) {
 
 
-    const material = new THREE.MeshBasicMaterial({ color: "rgb(250, 250, 250)" })
+    const material = new THREE.MeshBasicMaterial({ color: "rgb(0, 0, 0)" })
     const geometry = new THREE.SphereGeometry(5, 32, 32);;
     // this.material = new THREE.MeshLambertMaterial({ color: "rgb(128,128,0)" });
 

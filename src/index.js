@@ -23,7 +23,7 @@ let objects = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
 let instructions = document.getElementById('instructions');
-
+let orbAlive = []
 
 // PLAYEWR SET UP
 
@@ -105,6 +105,7 @@ let moveRight = false;
 let canJump = false;
 let prevTime = performance.now();
 let velocity = new THREE.Vector3();
+let orbVelocity = new THREE.Vector3();
 
 // HERE IS WHEN WE START ADDIN THE WORLD
 
@@ -184,23 +185,27 @@ function init() {
     document.addEventListener('keydown', onKeyDown, false);
     document.addEventListener('keyup', onKeyUp, false);
     raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, - 1, 0), 0, 10);
+    
     document.addEventListener("mousedown", shootOrb, true)
-    function shootOrb(dir){
+    function shootOrb(){
         console.log("shoot")
         let orbPos = raycaster.ray.origin.copy(controls.getObject().position);
-        debugger
+        
         let traj = camera.getWorldDirection(vector)
         console.log(traj)
         let orb = new Orb();
         
-        orb.position.x = orbPos.x
-        orb.position.y = orbPos.y
-        orb.position.z = orbPos.z
+        orb.position.copy(orbPos)
+        
         scene.add(orb)
+        orbAlive.push(orb)
+        
+        
        
         
 
     }
+    
 
 
     
@@ -226,7 +231,7 @@ function init() {
         sent_light.add(light)
         scene.add(sent_light)
         orbs.push(sentinel)
-        orb_lights.push(sent_light)
+        
     }
     
     
@@ -487,6 +492,25 @@ function checkCollisions(pos){
     
 }
 
+function animateOrb(orb) {
+    const traj = camera.getWorldDirection(vector)
+    let person = raycaster.ray.origin.copy(controls.getObject().position);
+    console.log(traj)
+    // console.log(person)
+    orb.position.x += (traj.x * 10)
+    orb.position.z += (traj.z * 10)
+    
+}
+function wallOstacle() {
+    let traj = camera.getWorldDirection(vector)
+    let person = raycaster.ray.origin.copy(controls.getObject().position);
+    console.log(traj)
+    // console.log(person)
+    orb.position.x += Math.sin(camera.rotation.y)
+    orb.position.z += Math.cos(camera.rotation.y)
+    
+}
+
 function remove(index){
     const object = scene.getObjectById(orbs[index].parent.id)
     
@@ -498,7 +522,10 @@ function remove(index){
 // Animate
 function animate() {
     requestAnimationFrame(animate);
-    
+    if(orbAlive.length > 0){
+
+        orbAlive.forEach(orb => animateOrb(orb))
+    }
     
     // This will give all the PointLock controls
     if (controlsEnabled) {
