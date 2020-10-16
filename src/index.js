@@ -2,34 +2,41 @@
 import Trunk from './scripts/objects/trunk'
 import Top from './scripts/objects/top'
 import Top2 from './scripts/objects/top2'
-import { Group } from 'three';
+import { Group, Vector3 } from 'three';
 // import Cloud from './scripts/objects/clouds';
 import Sentinel from './scripts/objects/sentinels';
 import Enemy from './scripts/enemies/enemy1';
 import Orb from './scripts/objects/orb';
+import EnemyOrb from './scripts/enemies/enemy1_orbs';
+import SmallEnemy from './scripts/enemies/small_enemy';
 
-
+const player = {health: 100}
 let camera, scene, renderer, mixer;
 let clouds
-var geometry, material, mesh;
 let orbs = []
-let sentinels
+let smallHit = false
 let enemy
 let controls;
 let group
 let cubeC
 let vector = new THREE.Vector3(0, 0, - 1);
 let objects = [];
+let trees = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
 let instructions = document.getElementById('instructions');
 let orbAlive = []
+let smallEnemies = []
 let hit = false
+let wait
+let orbHit = false
+let test = new Vector3(0, 5, 0)
+let enemyOrbs = []
 
 // PLAYEWR SET UP
 
 let orbCount = 0
-let ammo = 10
+let ammo = 50
 let counterDisp = document.getElementById('orbCounter')
 let ammoCount = document.getElementById('ammoCount')
 
@@ -40,6 +47,8 @@ function updateDisplay() {
 };
 updateDisplay()
 
+
+document.getElementById("restart").addEventListener("click", restartGame, true)
 // https://www.html5rocks.com/en/tutorials/pointerlock/intro/
 var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 if (havePointerLock) {
@@ -104,6 +113,7 @@ let moveBackward = false;
 let moveLeft = false;
 let moveRight = false;
 let canJump = false;
+let run = false;
 let prevTime = performance.now();
 let velocity = new THREE.Vector3();
 let orbVelocity = new THREE.Vector3();
@@ -121,7 +131,7 @@ function init() {
     scene = new THREE.Scene();
 
     // Fog will make the 750 distance blurry
-    scene.fog = new THREE.Fog(0xffffff, 0, 750);
+    scene.fog = new THREE.Fog(0xffffff, 0, 900);
 
     // Add hmisphere light
     let light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
@@ -153,6 +163,10 @@ function init() {
             case 68: // d
                 moveRight = true;
                 break;
+            case 16: // d
+                wait = performance.now()
+                run = true;
+                break;
             case 32: // space
                 if (canJump === true) velocity.y += 350;
                 canJump = false;
@@ -176,6 +190,10 @@ function init() {
             case 39: // right
             case 68: // d
                 moveRight = false;
+                break;
+            case 16: // d
+                
+                run = false;
                 break;
         }
     };
@@ -232,19 +250,44 @@ function init() {
         const sent_light = new THREE.Group()
         sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
         sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
-        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
+        sentinel.position.y = Math.floor(Math.random() * 30);
         light.position.x = sentinel.position.x
         light.position.y = sentinel.position.y
         light.position.z = sentinel.position.z
         sent_light.add(sentinel)
         sent_light.add(light)
         scene.add(sent_light)
-        orbs.push(sentinel)
+        orbs.push(sent_light)
         
     }
+
+    // SMALL ENEMIES
+    for (let i = 0; i < 6; i++) {
+        const small = new SmallEnemy;
+
+        const light = new THREE.PointLight("rgb(250, 0, 0)", 5, 100);
+        const smallEnemy = new THREE.Group()
+        small.position.x = Math.floor(Math.random() * 20 - 9) * 40;
+        small.position.z = Math.floor(Math.random() * 20 - 5) * 10;
+        small.position.y = 10;
+        light.position.x = small.position.x
+        light.position.y = small.position.y + 20
+        light.position.z = small.position.z
+        smallEnemy.add(small)
+        smallEnemy.add(light)
+        scene.add(smallEnemy)
+        smallEnemy.start = small.position
+        
+        smallEnemies.push(smallEnemy)
+
+    }
     
-    
-    
+    enemy = new Enemy();
+    enemy.position.x = 120;
+    enemy.position.z = 150;
+    enemy.position.y = 50;
+    enemy.health = 100;
+    scene.add(enemy)
    
 
 
@@ -265,9 +308,15 @@ function init() {
     tree.position.x = Math.floor(Math.random() * 20 - 10) * 60;
     tree.position.z = Math.floor(Math.random() * 20 - 10) * 60;
     tree.position.y = Math.floor(Math.random() * 30) + 20;
-    scene.add(tree)
-    objects.push(tree)
+    if ((tree.position.x < (enemy.position.x + 100) && tree.position.x > (enemy.position.x - 100)) && (tree.position.z < (enemy.position.z + 100) && tree.position.z > (enemy.position.z - 500))) {
+
+        i -= 1
+    } else {
+        scene.add(tree)
+        trees.push(tree)
     }
+    }
+    
 
     // Trees 2
     for (var i = 0; i < 75; i++) {
@@ -284,8 +333,14 @@ function init() {
     tree.position.x = Math.floor(Math.random() * 20 - 10) * 60;
     tree.position.z = Math.floor(Math.random() * 20 - 10) * 60;
     tree.position.y = Math.floor(Math.random() * 30) + 10;
-    scene.add(tree)
-    objects.push(tree)
+    if ((tree.position.x < (enemy.position.x + 100) && tree.position.x > (enemy.position.x - 100)) && (tree.position.z < (enemy.position.z + 100) && tree.position.z > (enemy.position.z - 500))){
+        
+        i -= 1
+    }else{
+        scene.add(tree)
+        trees.push(tree)
+    }
+    
     }
 
 
@@ -314,39 +369,32 @@ function init() {
 
     var cubeA = new THREE.Mesh(geometry, material);
     cubeA.position.set(200, 200, 0);
+    cubeA.name = "elevator"
 
     var cubeB = new THREE.Mesh(geometry, material);
     cubeB.position.set(20, 200, 10);
-    cubeC = new THREE.Mesh(geometry2, material);
-    cubeC.position.set(20, 10, 400);
+    
+    cubeB.name = "elevator"
+
     
 
     group = new THREE.Group();
     group.add(cubeA);
     group.add(cubeB);
+    group.name = "elevator"
     objects.push(cubeA)
     objects.push(cubeB)
     scene.add(group);
 
+
+    cubeC = new THREE.Mesh(geometry2, material);
+    cubeC.position.set(20, 10, 400);
     scene.add(cubeC)
     
     // ENEMY
     
-    enemy = new Enemy();
-    enemy.position.x = 120;
-    enemy.position.z = 150;
-    enemy.position.y = 30;
-    enemy.health = 100;
-    scene.add(enemy)
     
-
     
-
-    // SHOOTING
-
-
-
-
 
     // LIGHTS
 
@@ -408,6 +456,8 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 
 
+    // ANIMATION LOOP
+
     var lim = 400;
     var clock = new THREE.Clock();
     var speed = 30;
@@ -417,26 +467,20 @@ function init() {
     var lookAt = new THREE.Vector3();
 
     renderer.setAnimationLoop(() => {
-        
         move.copy(dir).multiplyScalar(speed * clock.getDelta());
-        
-        orbs.forEach((sent) => {
-            pos.copy(sent.position).add(move);
-
-
+        orbs.forEach(sent => {
+            pos.copy(sent.children[0].position).add(move);
             if (Math.abs(pos.length()) >= lim) {
-
-
                 dir.negate();
-
-
             }
-
-            sent.position.copy(pos);
-
+            sent.children[0].position.copy(pos);
+            sent.children[1].position.copy(pos);
             lookAt.copy(pos).add(dir);
         })
     })
+
+    
+    
     // GRASS
 
     var loader = new THREE.TextureLoader();
@@ -455,9 +499,50 @@ function init() {
 
     scene.add(mesh);
 
+    addEnemyOrb();
+    
+
 }
 
+function addEnemyOrb(){
+    setInterval(() => {
+        
+        const bullet = new EnemyOrb
+        bullet.position.copy(enemy.position)
+        bullet.position.y -= 15
+        bullet.traj = raycaster.ray.origin.copy(controls.getObject().position);
+        console.log("created orb")
+        enemyOrbs.push(bullet)
+        scene.add(bullet)
+        
+    }, 3000)
+}
 
+function animateEnemyOrbs(){
+    const person = raycaster.ray.origin.copy(controls.getObject().position);
+    
+    
+    if(enemyOrbs.length < 5){
+        enemyOrbs.forEach((bullet) => {
+            let array = [bullet.traj.x - enemy.position.x, bullet.traj.z - enemy.position.z, (bullet.traj.y - enemy.position.y + 10)]
+            const mag = Math.sqrt(array.reduce((acc, ele) => acc + (ele * ele)))
+            let unitVector = array.map(ele => ele/mag)
+            
+            const radian = bullet.position.angleTo(bullet.traj)
+            bullet.translateX(unitVector[0]* 5);
+            bullet.translateZ(unitVector[1]* 5);
+            bullet.translateY(unitVector[2]* 5);
+         
+        })
+
+    }else{
+        console.log("DELETE orbs")
+        enemyOrbs.forEach((bullet) => {
+            scene.remove(bullet)
+        })
+        enemyOrbs = []
+    }
+}
 
 // Not sure what this does, but seemed legit from the source code
 function onWindowResize() {
@@ -468,24 +553,65 @@ function onWindowResize() {
 
 
 function checkCollisions(pos){
-    // debugger
-    orbs.forEach((enemy, index) => {
+  
+    orbs.forEach((orb, index) => {
     //     let enemy = sent.position
-        
-        const objPos = enemy.position
-        
+        const objPos = orb.children[0].position
         if (
             (pos.x >= (objPos.x - 10) && pos.x <= (objPos.x + 10)) &&
             (pos.y >= (objPos.y - 10) && pos.y <= (objPos.y + 10)) &&
             (pos.z >= (objPos.z - 10) && pos.z <= (objPos.z + 10))
         ){
-            orbCount ++
-          
-            
+           updatePlayerHealth()
             updateDisplay();
-            remove(index)
-
+            remove(orb, index)
         }})
+    enemyOrbs.forEach((orb, index) => {
+        trees.forEach((tree) => {
+        
+        const objPos = orb.position
+        const treePos = tree.position
+        if (
+            (treePos.x >= (objPos.x - 5) && treePos.x <= (objPos.x + 5)) &&
+            (treePos.z >= (objPos.z - 5) && treePos.z <= (objPos.z + 5))
+            ){
+                
+                
+            updateDisplay();
+            removeEnemyOrb(orb, index)
+            }
+        })
+    })
+    
+    trees.forEach((tree) => {
+        
+        let pos = raycaster.ray.origin.copy(controls.getObject().position);
+        let posX = Math.floor(pos.x)
+        let posZ = Math.floor(pos.z)
+        if(moveForward){
+            posZ -= 3
+        }
+        if(moveBackward){
+            posZ += 3
+        }
+        if(moveLeft){
+            posZ -= 3
+        }
+        if(moveRight){
+            posZ += 3
+        }
+        
+        
+        
+        if ((tree.position.x + 5  >= posX && tree.position.x - 5 <= posX) && (tree.position.z + 5 >= posZ && tree.position.z - 5 <= posZ)){
+            console.log("TREEE")
+            moveBackward = false
+            moveForward = false
+            moveLeft = false
+            moveRight = false
+        }
+    })
+    
     if (cubeC){
         let ammoPos = cubeC.position
         if (
@@ -493,12 +619,11 @@ function checkCollisions(pos){
             (pos.y >= (ammoPos.y - 10) && pos.y <= (ammoPos.y + 10)) &&
             (pos.z >= (ammoPos.z - 10) && pos.z <= (ammoPos.z + 10))
         ) {
-            ammo += 10
+            ammo += 30
             scene.remove(cubeC)
-            updateDisplay();
-            
+            cubeC = false
+            updateDisplay(); 
         }
-
     }
     if (enemy.health > 0) {
         let enemyPos = enemy.position
@@ -509,20 +634,46 @@ function checkCollisions(pos){
         ) {
             console.log("hit")
             hitUser()
-
         }
-
     }
-    
-        
-    
+    if (enemyOrbs.length > 0) {
+        enemyOrbs.forEach((enemy, index) => {
+            let enemyPos = enemy.position
+            if (
+                (pos.x >= (enemyPos.x - 13) && pos.x <= (enemyPos.x + 13)) &&
+                (pos.y >= (enemyPos.y - 13) && pos.y <= (enemyPos.y + 13)) &&
+                (pos.z >= (enemyPos.z - 13) && pos.z <= (enemyPos.z + 13))
+            ) {
+                console.log("hit")
+                orbHitUser(enemy, index)
+            }
+
+        })
+    }
+    if (smallEnemies.length > 0) {
+        smallEnemies.forEach((enemy, index) => {
+            if (enemy != "undefined") {
+            let enemyPos = enemy.children[0].position
+            if (
+                (pos.x >= (enemyPos.x - 10) && pos.x <= (enemyPos.x + 10)) &&
+                (pos.y >= (enemyPos.y - 10) && pos.y <= (enemyPos.y + 10)) &&
+                (pos.z >= (enemyPos.z - 10) && pos.z <= (enemyPos.z + 10))
+            ) {
+                console.log(smallEnemies)
+                
+                smallEnemyHit()
+                removeSmallEnemy(enemy, index)
+            }
+        }
+        })
+    }
 }
 
 function checkOrbCollision(orb, index, object){
     let pos = orb.position
     let enemyPos = object.position
-    debugger
-    let size = object.size
+    
+    
     if (
         (pos.x >= (enemyPos.x - 50) && pos.x <= (enemyPos.x + 50)) &&
         (pos.y >= (enemyPos.y - 50) && pos.y <= (enemyPos.y + 50)) &&
@@ -530,35 +681,93 @@ function checkOrbCollision(orb, index, object){
     ) {
         console.log("hit")
         scene.remove(orb)
-        delete orbAlive[index]
-        enemy.health -= 5
-        debugger
+        orbAlive.splice(index, 1)
         
-        enemy.material.color.r -= .1;
-        enemy.material.color.g += .1;
+   
+        enemy.material.color.r -= .05;
+        enemy.material.color.g += .05;
         if(enemy.health <= 0){
             scene.remove(enemy)
         }
+        enemy.health -= 5
             
 
     }
+    smallEnemies.forEach((small, index) => {
+        if(small != "undefined"){
+
+            let move = false
+            let smallPos = small.children[0].position
+            
+            if (
+                (pos.x >= (smallPos.x - 8) && pos.x <= (smallPos.x + 8)) &&
+                (pos.y >= (smallPos.y - 8) && pos.y <= (smallPos.y + 8)) &&
+                (pos.z >= (smallPos.z - 8) && pos.z <= (smallPos.z + 8))
+            ) {
+                move = true
+                console.log("hit")
+                scene.remove(orb)
+                delete orbAlive[index]
+                small.children[0].health -= 5
+                console.log(small.children[0].health)
+                
+                small.children[0].hit = true
+                
+                small.children[1].intensity += 15;
+    
+                if (small.children[0].health <= 0){
+                    removeSmallEnemy(small, index)
+                    
+                }
+               
+                
+                    
+        
+            }
+        }
+
+    })
 }
 
-function animateOrb(orb, index) {
-    const traj = camera.getWorldDirection(vector)
-    let person = raycaster.ray.origin.copy(controls.getObject().position);
-    // console.log(traj)
-    // console.log(person)
+
+
+
+function animateOrb(orb, index, traj) {
     orb.position.x += (traj.x * 10)
     orb.position.z += (traj.z * 10)
+    orb.position.y += (traj.y * 10)
     setTimeout(() => {
         delete orbAlive[index]
         scene.remove(orb)
     }, 2000)
     
 }
+
+
+function updatePlayerHealth(){
+    player.health += 20
+    const playerHealth = player.health
+    document.getElementById("player-health").style.width = `${playerHealth}%`
+}
+function orbHitUser(orb, index){
+    removeEnemyOrb(orb, index)
+    const div = document.getElementById("hurt")
+    div.style.display = "inline"
+    orbHit = true
+    player.health -= 20
+    const playerHealth = player.health
+    document.getElementById("player-health").style.width = `${playerHealth}%`
+    console.log("HIT")
+    
+    setTimeout(() => {
+        orbHit = false
+        div.style.display = "none"
+        
+    }, 500)
+}
+
 function wallOstacle() {
-    let traj = camera.getWorldDirection(vector)
+    let trajectory = camera.getWorldDirection(vector)
     let person = raycaster.ray.origin.copy(controls.getObject().position);
     // console.log(traj)
     // console.log(person)
@@ -566,14 +775,93 @@ function wallOstacle() {
     orb.position.z += Math.cos(camera.rotation.y)
     
 }
+function endGame(){
+    document.getElementById("endgame").style.display = "block"
+    cancelAnimationFrame(start)
 
-function remove(index){
-    const object = scene.getObjectById(orbs[index].parent.id)
+}
+function restartGame(){
+    player.health = 100;
+    document.getElementById("endgame").style.display = "none"
+    init()
+    animate()
     
-    scene.remove(object)
+    
+    
+}
+function remove(orb, index){
+    
+    
+    scene.remove(orb)
     delete orbs[index]
 }
+function removeEnemyOrb(orb, index){
+    scene.remove(orb)
+    delete enemyOrbs[index]
+}
+function removeAllOrbs(){
+    enemyOrbs.forEach((orb) => {
+        scene.remove(orb)
 
+    })
+    enemyOrbs = []
+}
+
+function animateSmallEnemies(){
+    let copy = smallEnemies
+    copy.forEach((orb, index) => {
+    let pos = raycaster.ray.origin.copy(controls.getObject().position);
+    const array = [pos.x - orb.start.x, pos.z - orb.start.z]
+    
+        
+        const mag = Math.sqrt(array.reduce((acc, ele) => acc + (ele * ele)))
+        const unitVector = array.map(ele => ele / mag)
+        if(!orb.children[0].hit){
+           
+                orb.children[0].position.x += (unitVector[0] * .8);
+                orb.children[1].position.x += (unitVector[0] * .8);
+                orb.children[0].position.z += (unitVector[1] * .8);
+                orb.children[1].position.z += (unitVector[1] * .8);
+
+            
+            
+    
+        }
+        if(orb.children[0].hit){
+            
+            orb.children[0].position.x += ((unitVector[0] * -1) * 10);
+            orb.children[1].position.x += ((unitVector[0] * -1) * 10);
+            orb.children[0].position.z += ((unitVector[1] * -1) * 10);
+            orb.children[1].position.z += ((unitVector[1] * -1) * 10);
+            delayTrigger(orb.children[0])
+            return null
+        }
+
+    })
+    
+    
+
+
+    
+    
+    
+
+}
+
+function delayTrigger(orb){
+    setTimeout(() => {orb.hit = false}, 500)
+    animateSmallEnemies
+}
+function removeSmallEnemy(small, index){
+    scene.remove(small)
+    delete smallEnemies[index]
+    console.log(smallEnemies)
+    
+
+
+    
+    
+}
 function hitUser(){
     hit = true
     console.log("HIT")
@@ -581,22 +869,75 @@ function hitUser(){
         hit = false
     }, 500)
 }
+function smallEnemyHit(){
+    // hit = true
+    console.log("Small Enemy Hit")
+    player.health -= 20
+    const div = document.getElementById("hurt")
+    div.style.display = "inline"
+    const playerHealth = player.health
+    document.getElementById("player-health").style.width = `${playerHealth}%`
+    setTimeout(() => {
+        orbHit = false
+        div.style.display = "none"
 
+    }, 500)
+    // setTimeout(() => {
+    //     hit = false
+    // }, 500)
+}
 
+function animateCube(){
+    group.position.y += 1
+}
+
+function checkCube(arr){
+    arr[0].object.name === "elevator"
+    
+}
+const limitEnemy = 50
+let startEnemy = 0
+let highEnemy = 100
+function animateEnemy(){
+   
+
+    enemy.material.color.r = .9;
+    if(startEnemy < limitEnemy){
+        enemy.translateY(.2)
+        startEnemy += .1
+        console.log(startEnemy)
+    }
+    if (startEnemy === limitEnemy){
+        highEnemy -= .1
+        enemy.translateY(- .2)
+        
+    }
+    if(highEnemy === limitEnemy){
+        startEnemy = 0;
+        highEnemy = 100
+    }
+
+}
+let bang = 0;
+let start
 // Animate
 function animate() {
-    requestAnimationFrame(animate);
+    const traj = camera.getWorldDirection(vector)
+    start = requestAnimationFrame(animate);
     if(orbAlive.length > 0){
 
-        orbAlive.forEach((orb, index) => {animateOrb(orb, index)
+        orbAlive.forEach((orb, index) => {animateOrb(orb, index, traj)
         checkOrbCollision(orb, index, enemy)
         })
     }
     
+    
     // This will give all the PointLock controls
     if (controlsEnabled) {
+        
         raycaster.ray.origin.copy(controls.getObject().position);
         let pos = raycaster.ray.origin.copy(controls.getObject().position);
+        
         checkCollisions(pos)
         raycaster.ray.origin.y -= 10;
         var intersections = raycaster.intersectObjects(objects);
@@ -612,12 +953,24 @@ function animate() {
         if (moveBackward) velocity.z += 400.0 * delta;
         if (moveLeft) velocity.x -= 400.0 * delta;
         if (moveRight) velocity.x += 400.0 * delta;
+        if (run){
+            
+            if(time - wait < 3000)
+            velocity.z -= 400.0 * delta;
+        } 
         if (isOnObject === true) {
             velocity.y = Math.max(0, velocity.y);
             canJump = true;
+            if (checkCube(intersections)){
+                animateCube()
+            }
         }
+        
         if(hit){
             velocity.z += 10000.0 * delta;
+        }
+        if(orbHit){
+            velocity.z += 2000.0 * delta;
         }
         controls.getObject().translateX(velocity.x * delta);
         controls.getObject().translateY(velocity.y * delta);
@@ -626,6 +979,28 @@ function animate() {
             velocity.y = 0;
             controls.getObject().position.y = 10;
             canJump = true;
+        }
+        if(enemy.health > 0 && smallEnemies.every(ele => ele === "undefined")){
+            
+            animateEnemy()
+            animateEnemyOrbs()
+            
+            
+        }
+        
+        if(enemy.health <= 0){
+            removeAllOrbs()
+        }
+        if(player.health <= 0){
+            endGame()
+                   
+        }
+        if (smallEnemies.length > 0) {
+            
+            
+                animateSmallEnemies()
+
+        
         }
         
         prevTime = time;

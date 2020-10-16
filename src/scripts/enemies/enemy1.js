@@ -1,7 +1,7 @@
 var Enemy = function (opt) {
 
 
-    const material = new THREE.MeshBasicMaterial({ color: "rgb(250, 0, 0)" })
+    const material = new THREE.MeshPhongMaterial({ color: "rgb(250, 0, 0)" })
     const geometry = new THREE.SphereGeometry(50, 32, 32);;
     // this.material = new THREE.MeshLambertMaterial({ color: "rgb(128,128,0)" });
 
