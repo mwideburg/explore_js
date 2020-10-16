@@ -250,7 +250,7 @@ function init() {
         const sent_light = new THREE.Group()
         sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
         sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
-        sentinel.position.y = Math.floor(Math.random() * 30);
+        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
         light.position.x = sentinel.position.x
         light.position.y = sentinel.position.y
         light.position.z = sentinel.position.z
@@ -680,16 +680,17 @@ function checkOrbCollision(orb, index, object){
         (pos.z >= (enemyPos.z - 50) && pos.z <= (enemyPos.z + 50))
     ) {
         console.log("hit")
-        scene.remove(orb)
-        orbAlive.splice(index, 1)
+
+        removeUserOrb(orb, index)
         
-   
+        
+        enemy.health -= 5
         enemy.material.color.r -= .05;
         enemy.material.color.g += .05;
         if(enemy.health <= 0){
-            scene.remove(enemy)
+            removeSmallEnemy(enemy)
         }
-        enemy.health -= 5
+        
             
 
     }
@@ -745,7 +746,13 @@ function animateOrb(orb, index, traj) {
 
 
 function updatePlayerHealth(){
-    player.health += 20
+    if(player.health < 80){
+
+        player.health += 20
+        
+    }else{
+        player.health = 100
+    }
     const playerHealth = player.health
     document.getElementById("player-health").style.width = `${playerHealth}%`
 }
@@ -807,6 +814,11 @@ function removeAllOrbs(){
     enemyOrbs = []
 }
 
+function removeUserOrb(orb, index){
+    scene.remove(orb)
+    delete orbAlive[index]
+}
+
 function animateSmallEnemies(){
     let copy = smallEnemies
     copy.forEach((orb, index) => {
@@ -835,6 +847,10 @@ function animateSmallEnemies(){
             orb.children[1].position.z += ((unitVector[1] * -1) * 10);
             delayTrigger(orb.children[0])
             return null
+        }
+
+        if(orb.children[0].position.x === "NaN"){
+            removeSmallEnemy(orb)
         }
 
     })
