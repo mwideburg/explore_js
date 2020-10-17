@@ -33,6 +33,18 @@ let wait
 let orbHit = false
 let test = new Vector3(0, 5, 0)
 let enemyOrbs = []
+let clickCount = false
+let controlsEnabled = false;
+let moveForward = false;
+let moveBackward = false;
+let moveLeft = false;
+let moveRight = false;
+let canJump = false;
+let run = false;
+let prevTime = performance.now();
+let velocity = new THREE.Vector3();
+var direction = new THREE.Vector3();
+let orbVelocity = new THREE.Vector3();
 
 // PLAYEWR SET UP
 
@@ -108,16 +120,7 @@ animate();
 
 // Make variables
 
-let controlsEnabled = false;
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
-let canJump = false;
-let run = false;
-let prevTime = performance.now();
-let velocity = new THREE.Vector3();
-let orbVelocity = new THREE.Vector3();
+
 
 // HERE IS WHEN WE START ADDIN THE WORLD
 
@@ -145,7 +148,7 @@ function init() {
     scene.add(light);
 
     // Controls are confusing but just based it off of the source code of the example of PointerLockControls at three.js
-    controls = new THREE.PointerLockControls(camera);
+    controls = new THREE.PointerLockControls(camera, document.body);
     scene.add(controls.getObject());
     var onKeyDown = function (event) {
         keyDown = true
@@ -209,24 +212,26 @@ function init() {
     
     document.addEventListener("mousedown", shootOrb, true)
     function shootOrb(){
-        // console.log("shoot")
-        if(ammo > 0){
+        if(clickCount){
 
-
-            let orbPos = raycaster.ray.origin.copy(controls.getObject().position);
-            
-            let traj = camera.getWorldDirection(vector)
-            // console.log(traj)
-            let orb = new Orb();
-            
-            orb.position.copy(orbPos)
-            ammo -= 1
-            updateDisplay();
-            scene.add(orb)
-            orbAlive.push(orb)
-        }else{
-            // document.getElementById(ammoCount)
-            return null
+            if(ammo > 0){
+    
+    
+                let orbPos = raycaster.ray.origin.copy(controls.getObject().position);
+                
+                let traj = camera.getWorldDirection(vector)
+                
+                let orb = new Orb();
+                
+                orb.position.copy(orbPos)
+                ammo -= 1
+                updateDisplay();
+                scene.add(orb)
+                orbAlive.push(orb)
+            }
+        }
+        if(!clickCount){
+            clickCount = true
         }
         
         
@@ -358,8 +363,7 @@ function init() {
         cloud.position.z = Math.floor(Math.random() * 20 - 10) * 60;
         cloud.position.y = Math.floor(Math.random() * 30) + 300;
         scene.add(cloud)
-        clouds.add(mesh);
-        objects.push(cloud)
+        
     }
     scene.add(clouds)
 
@@ -436,7 +440,7 @@ function init() {
     let x = 100
     let z = 150
     for (var i = 0; i < 20; i++) {
-        material = new THREE.MeshBasicMaterial({ specular: 0xffffff, shading: THREE.FlatShading, vertexColors: THREE.VertexColors });
+        material = new THREE.MeshBasicMaterial({ color: 0xffffff, flatShading: THREE.FlatShading, vertexColors: THREE.VertexColors });
         var mesh = new THREE.Mesh(geometry, material);
         mesh.position.x = x
         mesh.position.y = y
@@ -468,18 +472,18 @@ function init() {
     var pos = new THREE.Vector3();
     var lookAt = new THREE.Vector3();
 
-    renderer.setAnimationLoop(() => {
-        move.copy(dir).multiplyScalar(speed * clock.getDelta());
-        orbs.forEach(sent => {
-            pos.copy(sent.children[0].position).add(move);
-            if (Math.abs(pos.length()) >= lim) {
-                dir.negate();
-            }
-            sent.children[0].position.copy(pos);
-            sent.children[1].position.copy(pos);
-            lookAt.copy(pos).add(dir);
-        })
-    })
+    // renderer.setAnimationLoop(() => {
+    //     move.copy(dir).multiplyScalar(speed * clock.getDelta());
+    //     orbs.forEach(sent => {
+    //         pos.copy(sent.children[0].position).add(move);
+    //         if (Math.abs(pos.length()) >= lim) {
+    //             dir.negate();
+    //         }
+    //         sent.children[0].position.copy(pos);
+    //         sent.children[1].position.copy(pos);
+    //         lookAt.copy(pos).add(dir);
+    //     })
+    // })
 
     
     
@@ -513,7 +517,7 @@ function addEnemyOrb(){
         bullet.position.copy(enemy.position)
         bullet.position.y -= 15
         bullet.traj = raycaster.ray.origin.copy(controls.getObject().position);
-        console.log("created orb")
+        
         enemyOrbs.push(bullet)
         scene.add(bullet)
         
@@ -538,7 +542,7 @@ function animateEnemyOrbs(){
         })
 
     }else{
-        console.log("DELETE orbs")
+       
         enemyOrbs.forEach((bullet) => {
             scene.remove(bullet)
         })
@@ -606,7 +610,9 @@ function checkCollisions(pos){
         
         
         if ((tree.position.x + 5  >= posX && tree.position.x - 5 <= posX) && (tree.position.z + 5 >= posZ && tree.position.z - 5 <= posZ)){
-            console.log("TREEE")
+           
+            velocity.x = 0;
+            velocity.z = 0;
             moveBackward = false
             moveForward = false
             moveLeft = false
@@ -621,7 +627,7 @@ function checkCollisions(pos){
             (pos.y >= (ammoPos.y - 10) && pos.y <= (ammoPos.y + 10)) &&
             (pos.z >= (ammoPos.z - 10) && pos.z <= (ammoPos.z + 10))
         ) {
-            ammo += 30
+            ammo += 100
             scene.remove(cubeC)
             cubeC = false
             updateDisplay(); 
@@ -634,7 +640,7 @@ function checkCollisions(pos){
             (pos.y >= (enemyPos.y - 50) && pos.y <= (enemyPos.y + 50)) &&
             (pos.z >= (enemyPos.z - 50) && pos.z <= (enemyPos.z + 50))
         ) {
-            console.log("hit")
+           
             hitUser()
         }
     }
@@ -646,7 +652,7 @@ function checkCollisions(pos){
                 (pos.y >= (enemyPos.y - 13) && pos.y <= (enemyPos.y + 13)) &&
                 (pos.z >= (enemyPos.z - 13) && pos.z <= (enemyPos.z + 13))
             ) {
-                console.log("hit")
+                
                 orbHitUser(enemy, index)
             }
 
@@ -664,6 +670,7 @@ function checkCollisions(pos){
                 console.log(smallEnemies)
                 
                 smallEnemyHit()
+                scene.remove(enemy)
                 removeSmallEnemy(enemy, index)
             }
         }
@@ -681,16 +688,17 @@ function checkOrbCollision(orb, index, object){
         (pos.y >= (enemyPos.y - 50) && pos.y <= (enemyPos.y + 50)) &&
         (pos.z >= (enemyPos.z - 50) && pos.z <= (enemyPos.z + 50))
     ) {
-        console.log("hit")
+       
 
         removeUserOrb(orb, index)
         
         
         enemy.health -= 5
-        enemy.material.color.r -= .1;
-        enemy.material.color.g += .1;
+        enemy.material.color.r -= .05;
+        enemy.material.color.g += .05;
         if(enemy.health <= 0){
-            removeSmallEnemy(enemy)
+            scene.remove(enemy)
+            removeSmallEnemy(enemy, index)
         }
         
             
@@ -708,18 +716,19 @@ function checkOrbCollision(orb, index, object){
                 (pos.z >= (smallPos.z - 8) && pos.z <= (smallPos.z + 8))
             ) {
                 move = true
-                console.log("hit")
+                
                 scene.remove(orb)
                 delete orbAlive[index]
                 small.children[0].health -= 5
-                console.log(small.children[0].health)
+               
                 
                 small.children[0].hit = true
                 
                 small.children[1].intensity += 15;
     
                 if (small.children[0].health <= 0){
-                    removeSmallEnemy(small, index)
+                    
+                    die(small, index)
                     
                 }
                
@@ -763,11 +772,10 @@ function orbHitUser(orb, index){
     const div = document.getElementById("hurt")
     div.style.display = "inline"
     orbHit = true
-    player.health -= 20
+    player.health -= 10
     const playerHealth = player.health
     document.getElementById("player-health").style.width = `${playerHealth}%`
-    console.log("HIT")
-    
+   
     setTimeout(() => {
         orbHit = false
         div.style.display = "none"
@@ -778,8 +786,7 @@ function orbHitUser(orb, index){
 function wallOstacle() {
     let trajectory = camera.getWorldDirection(vector)
     let person = raycaster.ray.origin.copy(controls.getObject().position);
-    // console.log(traj)
-    // console.log(person)
+
     orb.position.x += Math.sin(camera.rotation.y)
     orb.position.z += Math.cos(camera.rotation.y)
     
@@ -821,6 +828,17 @@ function removeUserOrb(orb, index){
     delete orbAlive[index]
 }
 
+function die(orb, index){
+    orb.children[0].material.transparent = true
+    orb.children[0].material.opacity = 1 + Math.sin(new Date().getTime() * .0025)
+    orb.children[1].intensity += 4
+    setTimeout(()=> {
+        scene.remove(orb)
+        removeSmallEnemy(orb, index)
+    }, 1000)
+    
+}
+
 function animateSmallEnemies(){
     let copy = smallEnemies
     copy.forEach((orb, index) => {
@@ -843,17 +861,17 @@ function animateSmallEnemies(){
     
         }
         if(orb.children[0].hit){
-            
-            orb.children[0].position.x += ((unitVector[0] * -1) * 10);
-            orb.children[1].position.x += ((unitVector[0] * -1) * 10);
-            orb.children[0].position.z += ((unitVector[1] * -1) * 10);
-            orb.children[1].position.z += ((unitVector[1] * -1) * 10);
             delayTrigger(orb.children[0])
-            return null
+            orb.children[0].translateX((unitVector[0] * -1) * 10);
+            orb.children[1].translateX((unitVector[0] * -1) * 10);
+            orb.children[0].translateZ((unitVector[1] * -1) * 10);
+            orb.children[1].translateX((unitVector[1] * -1) * 10);
+            orb.children[0].material.opacity -= .2;
         }
 
         if(orb.children[0].position.x === "NaN"){
-            removeSmallEnemy(orb)
+            scene.remove(orb)
+            removeSmallEnemy(orb, index)
         }
 
     })
@@ -868,29 +886,23 @@ function animateSmallEnemies(){
 }
 
 function delayTrigger(orb){
-    setTimeout(() => {orb.hit = false}, 500)
-    animateSmallEnemies
+    setTimeout(() => {orb.hit = false; opacity = 1;}, 500)
+
 }
 function removeSmallEnemy(small, index){
-    scene.remove(small)
+    debugger
     delete smallEnemies[index]
-    console.log(smallEnemies)
-    
-
-
-    
-    
 }
 function hitUser(){
     hit = true
-    console.log("HIT")
+   
     setTimeout(() => {
         hit = false
     }, 500)
 }
 function smallEnemyHit(){
     // hit = true
-    console.log("Small Enemy Hit")
+   
     player.health -= 20
     const div = document.getElementById("hurt")
     div.style.display = "inline"
@@ -918,10 +930,14 @@ const limitEnemy = 50
 let startEnemy = 0
 let highEnemy = 100
 let begin = true
+const top = 500
+const bottom = 500
+let madStart = 0
+let madEnd = 200
 function animateEnemy(){
    
     if(begin){
-        enemy.health = 100
+        enemy.health = 200
         enemy.material.color.r = 0.9;
         enemy.material.color.g = 0.0;
         enemy.material.color.b = 0.0;
@@ -932,7 +948,7 @@ function animateEnemy(){
     if(startEnemy < limitEnemy){
         enemy.translateY(.2)
         startEnemy += .1
-        console.log(startEnemy)
+        
     }
     if (startEnemy === limitEnemy){
         highEnemy -= .1
@@ -943,79 +959,110 @@ function animateEnemy(){
         startEnemy = 0;
         highEnemy = 100
     }
+    if(enemy.health <= 100 && madStart < 100){
+        enemy.translateZ(1)
+        madStart += 1
+        
+    }
+    if (enemy.health <= 100 && madStart === 100){
+        enemy.translateZ(-1)
+        madEnd -= 1
+    }
+    if(enemy.health <= 100 && madEnd === 100){
+        madStart = 0
+        madEnd = 200
+    }
 
 }
 let bang = 0;
 let start
+
 // Animate
 function animate() {
     const traj = camera.getWorldDirection(vector)
     start = requestAnimationFrame(animate);
     
-    
+    var time = performance.now();
     
     // This will give all the PointLock controls
     if (controlsEnabled) {
+        
+        
+
+        
+        
+        let pos = raycaster.ray.origin.copy(controls.getObject().position);
+       
+       
+        raycaster.ray.origin.copy(controls.getObject().position);
+        raycaster.ray.origin.y -= 10;
+        checkCollisions(pos)
+
+
+        var intersections = raycaster.intersectObjects(objects);
+       
+        var isOnObject = intersections.length > 0;
+       
+        
+        var delta = (time - prevTime) / 1000;
+        velocity.x -= velocity.x * 10.0 * delta;
+        velocity.z -= velocity.z * 10.0 * delta;
+        velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+        
+        direction.z = Number(moveForward) - Number(moveBackward);
+        direction.x = Number(moveRight) - Number(moveLeft);
+        direction.normalize(); // this ensures consistent movements in all directions
+        
+        if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+        if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+        if (isOnObject === true) {
+
+            velocity.y = Math.max(0, velocity.y);
+            canJump = true;
+
+        }
+
+        if (run){
+            
+            if(time - wait < 3000)
+            velocity.z -= 400.0 * delta;
+        } 
+        if (isOnObject === true) {
+            velocity.y = Math.max(0, velocity.y);
+            canJump = true;
+            if (checkCube(intersections)){
+                animateCube()
+            }
+        }
+        
+        if(hit){
+            velocity.z += 10000.0 * delta;
+        }
+        if(orbHit){
+            velocity.z += 2000.0 * delta;
+        }
+        controls.moveRight(- velocity.x * delta);
+        controls.moveForward(- velocity.z * delta);
+        controls.getObject().position.y += (velocity.y * delta);
+        
+        
+        // controls.getObject().translateX(velocity.x * delta);
+        // controls.getObject().translateY(velocity.y * delta);
+        // controls.getObject().translateZ(velocity.z * delta);
+
+         
+        if (controls.getObject().position.y < 10) {
+            velocity.y = 0;
+            controls.getObject().position.y = 10;
+            canJump = true;
+        }
         if (orbAlive.length > 0) {
 
             orbAlive.forEach((orb, index) => {
                 animateOrb(orb, index, traj)
                 checkOrbCollision(orb, index, enemy)
             })
-        }
-        
-
-        
-
-        let pos = raycaster.ray.origin.copy(controls.getObject().position);
-        console.log(pos)
-        checkCollisions(pos)
-        raycaster.ray.origin.copy(controls.getObject().position);
-        raycaster.ray.origin.y -= 10;
-        var intersections = raycaster.intersectObjects(objects);
-       
-        var isOnObject = intersections.length > 0;
-       
-        var time = performance.now();
-        var delta = (time - prevTime) / 1000;
-        velocity.x -= velocity.x * 10.0 * delta;
-        velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-        
-            if (moveForward) velocity.z -= 400.0 * delta;
-            if (moveBackward) velocity.z += 400.0 * delta;
-            if (moveLeft) velocity.x -= 400.0 * delta;
-            if (moveRight) velocity.x += 400.0 * delta;
-            if (run){
-                
-                if(time - wait < 3000)
-                velocity.z -= 400.0 * delta;
-            } 
-            if (isOnObject === true) {
-                velocity.y = Math.max(0, velocity.y);
-                canJump = true;
-                if (checkCube(intersections)){
-                    animateCube()
-                }
-            }
-            
-            if(hit){
-                velocity.z += 10000.0 * delta;
-            }
-            if(orbHit){
-                velocity.z += 2000.0 * delta;
-            }
-        
-            
-            controls.getObject().translateX(velocity.x * delta);
-            controls.getObject().translateY(velocity.y * delta);
-            controls.getObject().translateZ(velocity.z * delta);
-
-        
-        if (controls.getObject().position.y < 10) {
-            velocity.y = 0;
-            controls.getObject().position.y = 10;
-            canJump = true;
         }
         if(enemy.health > 0 && smallEnemies.every(ele => ele === "undefined")){
             
