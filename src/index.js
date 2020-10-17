@@ -28,6 +28,7 @@ let instructions = document.getElementById('instructions');
 let orbAlive = []
 let smallEnemies = []
 let hit = false
+let keyDown = false
 let wait
 let orbHit = false
 let test = new Vector3(0, 5, 0)
@@ -147,6 +148,7 @@ function init() {
     controls = new THREE.PointerLockControls(camera);
     scene.add(controls.getObject());
     var onKeyDown = function (event) {
+        keyDown = true
         switch (event.keyCode) {
             case 38: // up
             case 87: // w
@@ -174,6 +176,7 @@ function init() {
         }
     };
     var onKeyUp = function (event) {
+        keyDown = false
         switch (event.keyCode) {
             case 38: // up
             case 87: // w
@@ -200,7 +203,6 @@ function init() {
 
 
 
-    
     document.addEventListener('keydown', onKeyDown, false);
     document.addEventListener('keyup', onKeyUp, false);
     raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, - 1, 0), 0, 10);
@@ -268,7 +270,7 @@ function init() {
         const light = new THREE.PointLight("rgb(250, 0, 0)", 5, 100);
         const smallEnemy = new THREE.Group()
         small.position.x = Math.floor(Math.random() * 20 - 9) * 40;
-        small.position.z = Math.floor(Math.random() * 20 - 5) * 10;
+        small.position.z = Math.floor(Math.random() * 100 - 100) * 10;
         small.position.y = 10;
         light.position.x = small.position.x
         light.position.y = small.position.y + 20
@@ -284,7 +286,7 @@ function init() {
     
     enemy = new Enemy();
     enemy.position.x = 120;
-    enemy.position.z = 150;
+    enemy.position.z = 180;
     enemy.position.y = 50;
     enemy.health = 100;
     scene.add(enemy)
@@ -589,16 +591,16 @@ function checkCollisions(pos){
         let posX = Math.floor(pos.x)
         let posZ = Math.floor(pos.z)
         if(moveForward){
-            posZ -= 3
+            posZ -= 4
         }
         if(moveBackward){
-            posZ += 3
+            posZ += 4
         }
         if(moveLeft){
-            posZ -= 3
+            posX -= 4
         }
         if(moveRight){
-            posZ += 3
+            posX += 4
         }
         
         
@@ -685,8 +687,8 @@ function checkOrbCollision(orb, index, object){
         
         
         enemy.health -= 5
-        enemy.material.color.r -= .05;
-        enemy.material.color.g += .05;
+        enemy.material.color.r -= .1;
+        enemy.material.color.g += .1;
         if(enemy.health <= 0){
             removeSmallEnemy(enemy)
         }
@@ -825,7 +827,8 @@ function animateSmallEnemies(){
     let pos = raycaster.ray.origin.copy(controls.getObject().position);
     const array = [pos.x - orb.start.x, pos.z - orb.start.z]
     
-        
+        var time = performance.now();
+        var delta = (time - prevTime) / 1000;
         const mag = Math.sqrt(array.reduce((acc, ele) => acc + (ele * ele)))
         const unitVector = array.map(ele => ele / mag)
         if(!orb.children[0].hit){
@@ -914,10 +917,18 @@ function checkCube(arr){
 const limitEnemy = 50
 let startEnemy = 0
 let highEnemy = 100
+let begin = true
 function animateEnemy(){
    
+    if(begin){
+        enemy.health = 100
+        enemy.material.color.r = 0.9;
+        enemy.material.color.g = 0.0;
+        enemy.material.color.b = 0.0;
+        begin = false
 
-    enemy.material.color.r = .9;
+    }
+
     if(startEnemy < limitEnemy){
         enemy.translateY(.2)
         startEnemy += .1
@@ -940,21 +951,26 @@ let start
 function animate() {
     const traj = camera.getWorldDirection(vector)
     start = requestAnimationFrame(animate);
-    if(orbAlive.length > 0){
-
-        orbAlive.forEach((orb, index) => {animateOrb(orb, index, traj)
-        checkOrbCollision(orb, index, enemy)
-        })
-    }
+    
     
     
     // This will give all the PointLock controls
     if (controlsEnabled) {
+        if (orbAlive.length > 0) {
+
+            orbAlive.forEach((orb, index) => {
+                animateOrb(orb, index, traj)
+                checkOrbCollision(orb, index, enemy)
+            })
+        }
         
-        raycaster.ray.origin.copy(controls.getObject().position);
+
+        
+
         let pos = raycaster.ray.origin.copy(controls.getObject().position);
-        
+        console.log(pos)
         checkCollisions(pos)
+        raycaster.ray.origin.copy(controls.getObject().position);
         raycaster.ray.origin.y -= 10;
         var intersections = raycaster.intersectObjects(objects);
        
@@ -965,32 +981,37 @@ function animate() {
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
         velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-        if (moveForward) velocity.z -= 400.0 * delta;
-        if (moveBackward) velocity.z += 400.0 * delta;
-        if (moveLeft) velocity.x -= 400.0 * delta;
-        if (moveRight) velocity.x += 400.0 * delta;
-        if (run){
-            
-            if(time - wait < 3000)
-            velocity.z -= 400.0 * delta;
-        } 
-        if (isOnObject === true) {
-            velocity.y = Math.max(0, velocity.y);
-            canJump = true;
-            if (checkCube(intersections)){
-                animateCube()
-            }
-        }
         
-        if(hit){
-            velocity.z += 10000.0 * delta;
-        }
-        if(orbHit){
-            velocity.z += 2000.0 * delta;
-        }
-        controls.getObject().translateX(velocity.x * delta);
-        controls.getObject().translateY(velocity.y * delta);
-        controls.getObject().translateZ(velocity.z * delta);
+            if (moveForward) velocity.z -= 400.0 * delta;
+            if (moveBackward) velocity.z += 400.0 * delta;
+            if (moveLeft) velocity.x -= 400.0 * delta;
+            if (moveRight) velocity.x += 400.0 * delta;
+            if (run){
+                
+                if(time - wait < 3000)
+                velocity.z -= 400.0 * delta;
+            } 
+            if (isOnObject === true) {
+                velocity.y = Math.max(0, velocity.y);
+                canJump = true;
+                if (checkCube(intersections)){
+                    animateCube()
+                }
+            }
+            
+            if(hit){
+                velocity.z += 10000.0 * delta;
+            }
+            if(orbHit){
+                velocity.z += 2000.0 * delta;
+            }
+        
+            
+            controls.getObject().translateX(velocity.x * delta);
+            controls.getObject().translateY(velocity.y * delta);
+            controls.getObject().translateZ(velocity.z * delta);
+
+        
         if (controls.getObject().position.y < 10) {
             velocity.y = 0;
             controls.getObject().position.y = 10;
