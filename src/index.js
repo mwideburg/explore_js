@@ -829,7 +829,7 @@ function removeUserOrb(orb, index){
 }
 
 function die(orb, index){
-    
+    orb.children[0].opacity -= .1
     setTimeout(()=> {
         scene.remove(orb)
         removeSmallEnemy(orb, index)
