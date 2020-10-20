@@ -622,8 +622,8 @@ function checkCollisions(pos){
 
     cubes.forEach((cube, idx) => {
 
-        if (cube){
-            let ammoPos = cubeC.position
+        if (cube != "undefined"){
+            let ammoPos = cube.position
             if (
                 (pos.x >= (ammoPos.x - 10) && pos.x <= (ammoPos.x + 10)) &&
                 (pos.y >= (ammoPos.y - 10) && pos.y <= (ammoPos.y + 10)) &&
