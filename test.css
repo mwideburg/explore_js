@@ -166,3 +166,62 @@ body{
 	background: rgba(20, 240, 166, 0.884);
 }
 
+
+#tutorial{
+	transition: .2s;
+	transition-timing-function: ease-in-out;
+	display: none;
+	position: absolute;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	color:white;
+	font-size: 40px;
+	font-weight: bold;
+	width: 100%;
+	height: 100%;
+	z-index: 100;
+	
+}
+#shooter{
+	transition: .2s;
+	transition-timing-function: ease-in-out;
+	display: none;
+	position: absolute;
+	align-items: center;
+	flex-direction: column;
+	justify-content: center;
+	text-align: center;
+	color:white;
+	font-size: 40px;
+	font-weight: bold;
+	padding:10px;
+	width: 100%;
+	height: 100%;
+	z-index: 100;
+	
+}
+#goals{
+	transition: .2s;
+	transition-timing-function: ease-in-out;
+	padding:10px;
+	display: none;
+	position: absolute;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	color:white;
+	font-size: 40px;
+	font-weight: bold;
+	width: 100%;
+	height: 100%;
+	z-index: 100;
+	
+}
+li{
+	list-style: none;
+	margin: 0;
+	padding:0;
+	padding-bottom: 10px;
+}

@@ -2,7 +2,7 @@
 import Trunk from './scripts/objects/trunk'
 import Top from './scripts/objects/top'
 import Top2 from './scripts/objects/top2'
-import { Group, Vector3 } from 'three';
+
 // import Cloud from './scripts/objects/clouds';
 import Sentinel from './scripts/objects/sentinels';
 import Enemy from './scripts/enemies/enemy1';
@@ -10,7 +10,8 @@ import Orb from './scripts/objects/orb';
 import EnemyOrb from './scripts/enemies/enemy1_orbs';
 import SmallEnemy from './scripts/enemies/small_enemy';
 
-const player = {health: 100}
+
+const player = {health: 100, start: true, arrows: false, shoot: false}
 let camera, scene, renderer, mixer;
 let clouds
 let orbs = []
@@ -27,11 +28,12 @@ let blocker = document.getElementById('blocker');
 let instructions = document.getElementById('instructions');
 let orbAlive = []
 let smallEnemies = []
+
 let hit = false
 let keyDown = false
 let wait
 let orbHit = false
-let test = new Vector3(0, 5, 0)
+
 let enemyOrbs = []
 let clickCount = false
 let controlsEnabled = false;
@@ -44,7 +46,7 @@ let run = false;
 let prevTime = performance.now();
 let velocity = new THREE.Vector3();
 var direction = new THREE.Vector3();
-let orbVelocity = new THREE.Vector3();
+
 
 // PLAYEWR SET UP
 
@@ -70,7 +72,7 @@ if (havePointerLock) {
         if (document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element) {
             controlsEnabled = true;
             controls.enabled = true;
-            blocker.style.display = 'none';
+            
         } else {
             controls.enabled = false;
             blocker.style.display = '-webkit-box';
@@ -133,12 +135,12 @@ function init() {
 
     // Make initial scene
     scene = new THREE.Scene();
-
+    scene.background = new THREE.Color(0xcce0ff);
     // Fog will make the 750 distance blurry
-    scene.fog = new THREE.Fog(0xffffff, 0, 900);
+    scene.fog = new THREE.Fog(0xcce0ff, 0, 900);
 
     // Add hmisphere light
-    let light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
+    let light = new THREE.HemisphereLight(0xcce0ff, 0xcce0ff, 0.75);
     light.position.set(0.5, 1, 0.75);
     scene.add(light);
 
@@ -204,6 +206,12 @@ function init() {
         }
     };
 
+    // WALL
+    
+
+   
+
+
 
 
     document.addEventListener('keydown', onKeyDown, false);
@@ -212,8 +220,11 @@ function init() {
     
     document.addEventListener("mousedown", shootOrb, true)
     function shootOrb(){
+        if(player.shoot = false){
+            player.shoot = true
+        }
         if(clickCount){
-
+            
             if(ammo > 0){
     
     
@@ -292,7 +303,7 @@ function init() {
     enemy = new Enemy();
     enemy.position.x = 120;
     enemy.position.z = 180;
-    enemy.position.y = 50;
+    enemy.position.y = 150;
     enemy.health = 100;
     scene.add(enemy)
    
@@ -462,29 +473,6 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 
 
-    // ANIMATION LOOP
-
-    var lim = 400;
-    var clock = new THREE.Clock();
-    var speed = 30;
-    var dir = new THREE.Vector3(0, 0, 1).normalize();
-    var move = new THREE.Vector3();
-    var pos = new THREE.Vector3();
-    var lookAt = new THREE.Vector3();
-
-    // renderer.setAnimationLoop(() => {
-    //     move.copy(dir).multiplyScalar(speed * clock.getDelta());
-    //     orbs.forEach(sent => {
-    //         pos.copy(sent.children[0].position).add(move);
-    //         if (Math.abs(pos.length()) >= lim) {
-    //             dir.negate();
-    //         }
-    //         sent.children[0].position.copy(pos);
-    //         sent.children[1].position.copy(pos);
-    //         lookAt.copy(pos).add(dir);
-    //     })
-    // })
-
     
     
     // GRASS
@@ -619,6 +607,7 @@ function checkCollisions(pos){
             moveRight = false
         }
     })
+
     
     if (cubeC){
         let ammoPos = cubeC.position
@@ -678,7 +667,7 @@ function checkCollisions(pos){
     }
 }
 
-function checkOrbCollision(orb, index, object){
+function checkOrbCollision(orb, idx2, object){
     let pos = orb.position
     let enemyPos = object.position
     
@@ -690,15 +679,15 @@ function checkOrbCollision(orb, index, object){
     ) {
        
 
-        removeUserOrb(orb, index)
+        removeUserOrb(orb, idx2)
         
         
-        enemy.health -= 5
-        enemy.material.color.r -= .05;
-        enemy.material.color.g += .05;
+        enemy.health -= 7
+        enemy.material.color.r -= .02;
+        enemy.material.color.g += .02;
         if(enemy.health <= 0){
             scene.remove(enemy)
-            removeSmallEnemy(enemy, index)
+            removeSmallEnemy(enemy, 0)
         }
         
             
@@ -717,20 +706,18 @@ function checkOrbCollision(orb, index, object){
             ) {
                 move = true
                 
-                scene.remove(orb)
-                delete orbAlive[index]
-                small.children[0].health -= 5
-               
+                removeUserOrb(orb, idx2)
                 
+                small.children[0].health -= 8
+                if (small.children[0].health <= 0) {
+
+                    die(small, index)
+
+                }
                 small.children[0].hit = true
-                
                 small.children[1].intensity += 15;
     
-                if (small.children[0].health <= 0){
-                    
-                    die(small, index)
-                    
-                }
+                
                
                 
                     
@@ -861,11 +848,11 @@ function animateSmallEnemies(){
     
         }
         if(orb.children[0].hit){
-            delayTrigger(orb.children[0])
+            delayTrigger(orb.children[0], index)
             orb.children[0].translateX((unitVector[0] * -1) * 10);
             orb.children[1].translateX((unitVector[0] * -1) * 10);
             orb.children[0].translateZ((unitVector[1] * -1) * 10);
-            orb.children[1].translateX((unitVector[1] * -1) * 10);
+            orb.children[1].translateZ((unitVector[1] * -1) * 10);
             orb.children[0].material.opacity -= .2;
         }
 
@@ -885,12 +872,13 @@ function animateSmallEnemies(){
 
 }
 
-function delayTrigger(orb){
-    setTimeout(() => {orb.hit = false; opacity = 1;}, 500)
+function delayTrigger(orb, index){
+    
+    setTimeout(() => { orb.hit = false; opacity = 1; }, 200)
 
 }
 function removeSmallEnemy(small, index){
-    debugger
+    
     delete smallEnemies[index]
 }
 function hitUser(){
@@ -945,17 +933,17 @@ function animateEnemy(){
 
     }
 
-    if(startEnemy < limitEnemy){
+    if (startEnemy <= limitEnemy && enemy.health > 100){
+        enemy.translateY(-.2)
+        startEnemy += .2
+        
+    }
+    if (startEnemy >= limitEnemy && enemy.health > 100){
+        highEnemy -= .2
         enemy.translateY(.2)
-        startEnemy += .1
         
     }
-    if (startEnemy === limitEnemy){
-        highEnemy -= .1
-        enemy.translateY(- .2)
-        
-    }
-    if(highEnemy === limitEnemy){
+    if(highEnemy <= limitEnemy){
         startEnemy = 0;
         highEnemy = 100
     }
@@ -974,6 +962,27 @@ function animateEnemy(){
     }
 
 }
+
+function instructionText(){
+    
+    document.getElementById('tutorial').style.display = "flex"
+    if(moveForward){
+        player.start = false
+        document.getElementById('tutorial').style.display = "none"
+        document.getElementById('shooter').style.display = "flex"
+        setTimeout(() => {
+            document.getElementById('shooter').style.display = "none"
+            document.getElementById('goals').style.display = "flex"
+
+        }, 3000)
+        setTimeout(() => {
+                document.getElementById('goals').style.display = "none"
+                blocker.style.display = 'none';
+        }, 8000)
+    }
+}
+
+
 let bang = 0;
 let start
 
@@ -988,8 +997,10 @@ function animate() {
     if (controlsEnabled) {
         
         
+        if(player.start){
+            instructionText()
+        }
 
-        
         
         let pos = raycaster.ray.origin.copy(controls.getObject().position);
        
@@ -1064,7 +1075,7 @@ function animate() {
                 checkOrbCollision(orb, index, enemy)
             })
         }
-        if(enemy.health > 0 && smallEnemies.every(ele => ele === "undefined")){
+        if(enemy.health > 0 && smallEnemies.every((enemy => enemy === "undefined"))){
             
             animateEnemy()
             animateEnemyOrbs()
@@ -1079,12 +1090,8 @@ function animate() {
             endGame()
                    
         }
-        if (smallEnemies.length > 0) {
-            
-            
-                animateSmallEnemies()
-
-        
+        if (pos.z < 500) {
+            animateSmallEnemies()
         }
         
         prevTime = time;
