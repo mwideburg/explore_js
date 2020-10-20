@@ -19,9 +19,12 @@ let smallHit = false
 let enemy
 let controls;
 let group
+let cubeA
+let cubeB
 let cubeC
 let vector = new THREE.Vector3(0, 0, - 1);
 let objects = [];
+let cubes = [];
 let trees = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
@@ -283,7 +286,7 @@ function init() {
     for (let i = 0; i < 6; i++) {
         const small = new SmallEnemy;
 
-        const light = new THREE.PointLight("rgb(250, 0, 0)", 5, 100);
+        const light = new THREE.PointLight("rgb(250, 0, 0)", 20, 100);
         const smallEnemy = new THREE.Group()
         small.position.x = Math.floor(Math.random() * 20 - 9) * 40;
         small.position.z = Math.floor(Math.random() * 100 - 100) * 10;
@@ -305,6 +308,8 @@ function init() {
     enemy.position.z = 180;
     enemy.position.y = 150;
     enemy.health = 100;
+    enemy.material.transparent = true
+    enemy.material.opacity = 1
     scene.add(enemy)
    
 
@@ -380,33 +385,40 @@ function init() {
 
     // CUBES
     // Come back and make this a constructor class
-    geometry = new THREE.BoxBufferGeometry(100, 100, 100);
+    // geometry = new THREE.BoxBufferGeometry(100, 100, 100);
+    
+    // var cubeA = new THREE.Mesh(geometry, material);
+    // cubeA.position.set(200, 200, 0);
+    // cubeA.name = "elevator"
+    
+    // var cubeB = new THREE.Mesh(geometry, material);
+    // cubeB.position.set(20, 200, 10);
+    
+    // cubeB.name = "elevator"
+    
+    
+    
     let geometry2 = new THREE.BoxBufferGeometry(10, 10, 10);
     material = new THREE.MeshBasicMaterial({ color: 0x00f000 });
-
-    var cubeA = new THREE.Mesh(geometry, material);
-    cubeA.position.set(200, 200, 0);
-    cubeA.name = "elevator"
-
-    var cubeB = new THREE.Mesh(geometry, material);
-    cubeB.position.set(20, 200, 10);
     
-    cubeB.name = "elevator"
 
     
 
-    group = new THREE.Group();
-    group.add(cubeA);
-    group.add(cubeB);
-    group.name = "elevator"
-    objects.push(cubeA)
-    objects.push(cubeB)
-    scene.add(group);
-
-
+    cubeA = new THREE.Mesh(geometry2, material);
+    cubeB = new THREE.Mesh(geometry2, material);
     cubeC = new THREE.Mesh(geometry2, material);
+    cubeA.position.set(200, 10, 300);
+    cubeB.position.set(-100, 10, 300);
     cubeC.position.set(20, 10, 400);
-    scene.add(cubeC)
+    scene.add(cubeA);
+    scene.add(cubeB);
+    scene.add(cubeC);
+
+    cubes.push(cubeA)
+    cubes.push(cubeB)
+    cubes.push(cubeC)
+
+ 
     
     // ENEMY
     
@@ -608,20 +620,23 @@ function checkCollisions(pos){
         }
     })
 
-    
-    if (cubeC){
-        let ammoPos = cubeC.position
-        if (
-            (pos.x >= (ammoPos.x - 10) && pos.x <= (ammoPos.x + 10)) &&
-            (pos.y >= (ammoPos.y - 10) && pos.y <= (ammoPos.y + 10)) &&
-            (pos.z >= (ammoPos.z - 10) && pos.z <= (ammoPos.z + 10))
-        ) {
-            ammo += 100
-            scene.remove(cubeC)
-            cubeC = false
-            updateDisplay(); 
+    cubes.forEach((cube, idx) => {
+
+        if (cube){
+            let ammoPos = cubeC.position
+            if (
+                (pos.x >= (ammoPos.x - 10) && pos.x <= (ammoPos.x + 10)) &&
+                (pos.y >= (ammoPos.y - 10) && pos.y <= (ammoPos.y + 10)) &&
+                (pos.z >= (ammoPos.z - 10) && pos.z <= (ammoPos.z + 10))
+            ) {
+                ammo += 100
+                scene.remove(cube)
+                delete cubes[idx]
+                cube = false
+                updateDisplay(); 
+            }
         }
-    }
+    })
     if (enemy.health > 0) {
         let enemyPos = enemy.position
         if (
@@ -685,14 +700,12 @@ function checkOrbCollision(orb, idx2, object){
         enemy.health -= 7
         enemy.material.color.r -= .02;
         enemy.material.color.g += .02;
-        if(enemy.health <= 0){
-            scene.remove(enemy)
-            removeSmallEnemy(enemy, 0)
-        }
+        
         
             
 
     }
+    
     smallEnemies.forEach((small, index) => {
         if(small != "undefined"){
 
@@ -816,16 +829,14 @@ function removeUserOrb(orb, index){
 }
 
 function die(orb, index){
-    orb.children[0].material.transparent = true
-    orb.children[0].material.opacity = 1 + Math.sin(new Date().getTime() * .0025)
-    orb.children[1].intensity += 4
+    
     setTimeout(()=> {
         scene.remove(orb)
         removeSmallEnemy(orb, index)
-    }, 1000)
+    }, 500)
     
 }
-
+let smallTime
 function animateSmallEnemies(){
     let copy = smallEnemies
     copy.forEach((orb, index) => {
@@ -837,7 +848,7 @@ function animateSmallEnemies(){
         const mag = Math.sqrt(array.reduce((acc, ele) => acc + (ele * ele)))
         const unitVector = array.map(ele => ele / mag)
         if(!orb.children[0].hit){
-           
+            smallTime = 0
                 orb.children[0].position.x += (unitVector[0] * .8);
                 orb.children[1].position.x += (unitVector[0] * .8);
                 orb.children[0].position.z += (unitVector[1] * .8);
@@ -848,12 +859,15 @@ function animateSmallEnemies(){
     
         }
         if(orb.children[0].hit){
-            delayTrigger(orb.children[0], index)
+            
+            delayTrigger(orb.children[0])
             orb.children[0].translateX((unitVector[0] * -1) * 10);
             orb.children[1].translateX((unitVector[0] * -1) * 10);
             orb.children[0].translateZ((unitVector[1] * -1) * 10);
             orb.children[1].translateZ((unitVector[1] * -1) * 10);
-            orb.children[0].material.opacity -= .2;
+            orb.children[0].material.opacity -= .01;
+            orb.children[1].intensity += .01
+            
         }
 
         if(orb.children[0].position.x === "NaN"){
@@ -873,12 +887,17 @@ function animateSmallEnemies(){
 }
 
 function delayTrigger(orb, index){
-    
-    setTimeout(() => { orb.hit = false; opacity = 1; }, 200)
+    if(orb.health > 0){
+        setTimeout(() => {
+            orb.hit = false;
+            orb.material.opacity = 1
+        }, 300)
+    }
+   
 
 }
 function removeSmallEnemy(small, index){
-    
+    scene.remove(small)
     delete smallEnemies[index]
 }
 function hitUser(){
@@ -891,7 +910,7 @@ function hitUser(){
 function smallEnemyHit(){
     // hit = true
    
-    player.health -= 20
+    player.health -= 10
     const div = document.getElementById("hurt")
     div.style.display = "inline"
     const playerHealth = player.health
@@ -952,13 +971,22 @@ function animateEnemy(){
         madStart += 1
         
     }
-    if (enemy.health <= 100 && madStart === 100){
+    if (enemy.health <= 100 && enemy.health > 0 && madStart === 100){
         enemy.translateZ(-1)
         madEnd -= 1
     }
-    if(enemy.health <= 100 && madEnd === 100){
+    if (enemy.health <= 100 && enemy.health > 0 && madEnd === 100){
         madStart = 0
         madEnd = 200
+    }
+    if (enemy.health <= 0) {
+        
+        enemy.translateY(-.5)
+        enemy.material.color.g +=.2
+        enemy.material.color.b +=.2
+        enemy.material.color.r +=.1
+        enemy.material.opacity -=.01
+
     }
 
 }
@@ -1053,6 +1081,7 @@ function animate() {
         if(orbHit){
             velocity.z += 2000.0 * delta;
         }
+        
         controls.moveRight(- velocity.x * delta);
         controls.moveForward(- velocity.z * delta);
         controls.getObject().position.y += (velocity.y * delta);
@@ -1075,11 +1104,11 @@ function animate() {
                 checkOrbCollision(orb, index, enemy)
             })
         }
-        if(enemy.health > 0 && smallEnemies.every((enemy => enemy === "undefined"))){
+        if(smallEnemies.every(ele => ele === "undefined")){
+            
             
             animateEnemy()
             animateEnemyOrbs()
-            
             
         }
         

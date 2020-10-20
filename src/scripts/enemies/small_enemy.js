@@ -11,13 +11,14 @@ var SmallEnemy = function (opt) {
     groundTexture.encoding = THREE.sRGBEncoding;
 
     var material = new THREE.MeshLambertMaterial({ map: groundTexture });
-    
+    material.transparent = true
     const geometry = new THREE.TetrahedronBufferGeometry(15, 0);
     // this.material = new THREE.MeshLambertMaterial({ color: "rgb(128,128,0)" });
 
     THREE.Mesh.call(this, geometry, material);
     this.health = 20;
     this.hit = false
+    
 };
 
 SmallEnemy.prototype = Object.create(THREE.Mesh.prototype);
