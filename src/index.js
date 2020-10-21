@@ -9,6 +9,7 @@ import Enemy from './scripts/enemies/enemy1';
 import Orb from './scripts/objects/orb';
 import EnemyOrb from './scripts/enemies/enemy1_orbs';
 import SmallEnemy from './scripts/enemies/small_enemy';
+import Level2 from './scripts/level_2/level_2';
 
 
 const player = {health: 100, start: true, arrows: false, shoot: false}
@@ -24,6 +25,8 @@ let cubeB
 let cubeC
 let vector = new THREE.Vector3(0, 0, - 1);
 let objects = [];
+let level2Plane = [];
+let level2;
 let cubes = [];
 let trees = [];
 let raycaster;
@@ -134,6 +137,7 @@ function init() {
     // Camera is place away from center
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
     camera.position.z = 700
+ 
     
 
     // Make initial scene
@@ -210,8 +214,11 @@ function init() {
     };
 
     // WALL
-    
-
+    const spotEn = new THREE.PointLight("white", 10, 100);
+    spotEn.position.x = 100
+    spotEn.position.y = 10
+    spotEn.position.z = 180
+    scene.add(spotEn)
    
 
 
@@ -267,7 +274,7 @@ function init() {
     for (let i = 0; i < 10; i++) {
         const sentinel = new Sentinel;
 
-        const light = new THREE.PointLight("rgb(255, 222, 84)", 15, 100);
+        const light = new THREE.PointLight("rgb(255, 222, 84)", 10, 100);
         const sent_light = new THREE.Group()
         sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
         sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
@@ -312,7 +319,11 @@ function init() {
     enemy.material.opacity = 1
     scene.add(enemy)
    
-
+    level2 = new Level2(scene, smallEnemies)
+    var water = level2.makeGround()
+    level2.scene = scene
+    scene.add(water)
+    level2Plane.push(water)
 
     /// TREESSSS
 
@@ -429,27 +440,39 @@ function init() {
 
 
     // Come back and make this a constructor class
-    light = new THREE.PointLight(0xff0000, 15, 100);
-    light.position.set(20, 0, 150);
-    scene.add(light);
-    
-
-    var spotLight = new THREE.SpotLight(0xffffff, 10, 1000);
-    spotLight.position.set(100, 1000, 100);
-
-    spotLight.castShadow = true;
-
-    spotLight.shadow.mapSize.width = 1024;
-    spotLight.shadow.mapSize.height = 1024;
-
-    spotLight.shadow.camera.near = 500;
-    spotLight.shadow.camera.far = 4000;
-    spotLight.shadow.camera.fov = 30;
-
-    scene.add(spotLight);
     
     
 
+    // var spotLight = new THREE.SpotLight(0xffffff, 10, 1000);
+    // spotLight.position.set(100, 1000, 100);
+
+    // spotLight.castShadow = true;
+
+    // spotLight.shadow.mapSize.width = 1024;
+    // spotLight.shadow.mapSize.height = 1024;
+
+    // spotLight.shadow.camera.near = 500;
+    // spotLight.shadow.camera.far = 4000;
+    // spotLight.shadow.camera.fov = 30;
+
+    // scene.add(spotLight);
+
+    geometry = new THREE.CylinderGeometry(20, 20, 4);
+    for (var i = 0, l = geometry.faces.length; i < l; i++) {
+    var face = geometry.faces[i];
+    face.vertexColors[0] = new THREE.Color("white")
+    face.vertexColors[1] = new THREE.Color("white")
+    face.vertexColors[2] = new THREE.Color("white")
+    }
+    material = new THREE.MeshPhongMaterial({ color: 0xffffff, flatShading: THREE.FlatShading, vertexColors: THREE.VertexColors });
+    var elevator = new THREE.Mesh(geometry, material);
+    elevator.position.x = 100
+    elevator.position.y = 540
+    elevator.position.z = -140
+    elevator.name = "elevator"
+
+    scene.add(elevator);
+    objects.push(elevator)
     // Come back and make this a constructor class
     // These are the steps leading to the next level
     geometry = new THREE.CylinderGeometry(20, 20, 4);
@@ -459,10 +482,10 @@ function init() {
         face.vertexColors[1] = new THREE.Color("rgb(100, 50, 20)")
         face.vertexColors[2] = new THREE.Color("rgb(100, 250, 250)")
     }
-    let y = 30
+    let y = 300
     let x = 100
     let z = 150
-    for (var i = 0; i < 20; i++) {
+    for (var i = 0; i < 9; i++) {
         material = new THREE.MeshBasicMaterial({ color: 0xffffff, flatShading: THREE.FlatShading, vertexColors: THREE.VertexColors });
         var mesh = new THREE.Mesh(geometry, material);
         mesh.position.x = x
@@ -474,6 +497,7 @@ function init() {
         material.color.setHSL(Math.random() * 0.2 + 0.5, 0.75, Math.random() * 0.25 + 0.75);
         objects.push(mesh);
     }
+    // 
     
     renderer = new THREE.WebGLRenderer();
     renderer.setClearColor(0xffffff);
@@ -816,6 +840,7 @@ function removeEnemyOrb(orb, index){
     delete enemyOrbs[index]
 }
 function removeAllOrbs(){
+    scene.remove(enemyLight)
     enemyOrbs.forEach((orb) => {
         scene.remove(orb)
 
@@ -924,15 +949,39 @@ function smallEnemyHit(){
     //     hit = false
     // }, 500)
 }
+let elevatorTime = 500
+function animateElevator(elevator){
+    elevatorTime -= .5
+    if(elevatorTime > 0){
+        elevator.translateY(.5)
 
-function animateCube(){
-    group.position.y += 1
+    }
 }
 
 function checkCube(arr){
+    debugger
     arr[0].object.name === "elevator"
     
 }
+
+let stairEnd = 280
+function animateStairs(){
+    stairEnd -= .5
+    
+    if(stairEnd > 0){
+        objects.forEach(stair =>{
+            
+            stair.translateY(-.5)
+        })
+
+    }
+}
+
+function level2Generate(){
+    level2.makeSmallEnemies(scene, smallEnemies)
+    level2.makeSteps(level2.scene, objects)
+}
+
 const limitEnemy = 50
 let startEnemy = 0
 let highEnemy = 100
@@ -941,9 +990,16 @@ const top = 500
 const bottom = 500
 let madStart = 0
 let madEnd = 200
+const enemyLight = new THREE.PointLight("rgb(250, 0 ,0)", 0, 600)
+scene.add(enemyLight)
 function animateEnemy(){
-   
+    enemyLight.position.x = enemy.position.x
+    enemyLight.position.y = enemy.position.y + 100
+    enemyLight.position.z = enemy.position.z
+    
+
     if(begin){
+        enemyLight.intensity = 30
         enemy.health = 200
         enemy.material.color.r = 0.9;
         enemy.material.color.g = 0.0;
@@ -1013,14 +1069,12 @@ function instructionText(){
 
 let bang = 0;
 let start
-
+let nextLevel = 0
 // Animate
 function animate() {
     const traj = camera.getWorldDirection(vector)
     start = requestAnimationFrame(animate);
-    
     var time = performance.now();
-    
     // This will give all the PointLock controls
     if (controlsEnabled) {
         
@@ -1041,7 +1095,19 @@ function animate() {
         var intersections = raycaster.intersectObjects(objects);
        
         var isOnObject = intersections.length > 0;
-       
+        let plane2 = []
+        
+        plane2 = raycaster.intersectObjects(level2Plane)
+        if(pos.y > 340){
+            if(nextLevel === 0){
+                level2Generate()
+                nextLevel = false
+            }
+            level2.update(renderer, scene, camera)
+
+        }
+        
+        var isOnplane2 = plane2.length > 0;
         
         var delta = (time - prevTime) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
@@ -1061,19 +1127,40 @@ function animate() {
             canJump = true;
 
         }
+        if (isOnObject === true) {
+            velocity.y = Math.max(0, velocity.y);
+            
+             
+            canJump = true;
+            if (intersections[0].object.name === "elevator"){
+                console.log(pos.y)
+                velocity.y = Math.max(20, velocity.y)
+                animateElevator(intersections[0].object)
+                controls.getObject().position.y = intersections[0].object.position.y + 10
+            }
+            if (intersections[0].object.name === "step"){
+                controls.getObject().position.x += (intersections[0].object.speed.x)
+                
+                
+
+            }
+        }
+        if (isOnplane2 === true) {
+            velocity.y = Math.max(0, velocity.y);
+            canJump = true;
+        }
+        if (isOnplane2 === true) {
+
+            velocity.y = Math.max(0, velocity.y);
+            canJump = true;
+
+        }
 
         if (run){
             
             if(time - wait < 3000)
             velocity.z -= 400.0 * delta;
         } 
-        if (isOnObject === true) {
-            velocity.y = Math.max(0, velocity.y);
-            canJump = true;
-            if (checkCube(intersections)){
-                animateCube()
-            }
-        }
         
         if(hit){
             velocity.z += 10000.0 * delta;
@@ -1104,16 +1191,19 @@ function animate() {
                 checkOrbCollision(orb, index, enemy)
             })
         }
+
         if(smallEnemies.every(ele => ele === "undefined")){
+            
             
             
             animateEnemy()
             animateEnemyOrbs()
-            
         }
         
         if(enemy.health <= 0){
             removeAllOrbs()
+
+            animateStairs()
         }
         if(player.health <= 0){
             endGame()
@@ -1126,12 +1216,6 @@ function animate() {
         prevTime = time;
     }
     
-
-    
-
-    
-
-
     renderer.render(scene, camera);
 }
 
