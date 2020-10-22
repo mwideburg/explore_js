@@ -81,6 +81,7 @@ if (havePointerLock) {
         if (document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element) {
             controlsEnabled = true;
             controls.enabled = true;
+            blocker.style.display = 'none';
             
         } else {
             controls.enabled = false;
