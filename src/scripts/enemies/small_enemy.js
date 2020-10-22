@@ -1,7 +1,7 @@
 const { Scene } = require("three");
 const EnemyOrb = require("./enemy1_orbs");
 
-var SmallEnemy = function (opt) {
+var SmallEnemy = function (camera) {
 
     var loader = new THREE.TextureLoader();
     var groundTexture = loader.load('./src/images/red_text.jpg');
@@ -18,6 +18,8 @@ var SmallEnemy = function (opt) {
     THREE.Mesh.call(this, geometry, material);
     this.health = 20;
     this.hit = false
+
+    
     
 };
 

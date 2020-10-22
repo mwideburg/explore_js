@@ -22,6 +22,18 @@ Level2.prototype.makeSmallEnemies = function (scene, smallEnemies){
         scene.add(smallEnemy)
 
     }
+    let geometry2 = new THREE.BoxBufferGeometry(100, 100, 100);
+    material = new THREE.MeshBasicMaterial({ color: 0x00f000 });
+
+
+
+
+    cubeA = new THREE.Mesh(geometry2, material);
+    cubeA.position.y = 340
+    cubeA.position.x = 100
+    cubeA.position.z = 300
+
+    scene.add(cubeA)
 }
 
 Level2.prototype.makeGround = () => {
@@ -39,7 +51,14 @@ Level2.prototype.makeGround = () => {
     mesh.rotation.x = - Math.PI / 2;
     mesh.receiveShadow = true;
     mesh.name = "level"
+
+
+    
+
     return mesh
+
+
+
    
 }
 
