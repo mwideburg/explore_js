@@ -149,12 +149,12 @@ function init() {
     // Add hmisphere light
     let light = new THREE.HemisphereLight(0xcce0ff, 0xcce0ff, 0.75);
     light.position.set(0.5, 1, 0.75);
-    scene.add(light);
+    // scene.add(light);
 
     // Add a little spot light near stairs
     light = new THREE.SpotLight(0xeeeeff, 0x777788, 0.75);
     light.position.set(20, 10, 100);
-    scene.add(light);
+    // scene.add(light);
 
     // Controls are confusing but just based it off of the source code of the example of PointerLockControls at three.js
     controls = new THREE.PointerLockControls(camera, document.body);
@@ -283,7 +283,7 @@ function init() {
         light.position.y = sentinel.position.y
         light.position.z = sentinel.position.z
         sent_light.add(sentinel)
-        sent_light.add(light)
+        // sent_light.add(light)
         scene.add(sent_light)
         orbs.push(sent_light)
         
