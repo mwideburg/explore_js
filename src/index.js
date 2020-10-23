@@ -12,8 +12,10 @@ import SmallEnemy from './scripts/enemies/small_enemy';
 import Level2 from './scripts/level_2/level_2';
 import SoundEngine from './scripts/sound_engine/sound_engine';
 import SoundFX from './scripts/sound_engine/sound_fx';
-
-
+import { Vector3 } from 'three';
+let bossHealth = 200
+let bossRate = 3000
+let removeLevel = false
 const player = {health: 100, start: true, arrows: false, shoot: false}
 let camera, scene, renderer, mixer;
 let clouds
@@ -22,6 +24,7 @@ let smallHit = false
 let enemy
 let controls;
 let group
+let points = 0
 let cubeA
 let cubeB
 let cubeC
@@ -34,15 +37,16 @@ let trees = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
 let instructions = document.getElementById('instructions');
+let pointsHTML = document.getElementById('points');
 let orbAlive = []
 let smallEnemies = []
 let soundEngine
 let soundFX
 let hit = false
-
+var listener = new THREE.AudioListener();
 let wait
 let orbHit = false
-
+let play = true
 let enemyOrbs = []
 let clickCount = false
 let controlsEnabled = false;
@@ -55,7 +59,8 @@ let run = false;
 let prevTime = performance.now();
 let velocity = new THREE.Vector3();
 var direction = new THREE.Vector3();
-
+let sounds = {}
+let hits = {}
 
 // PLAYEWR SET UP
 
@@ -68,8 +73,20 @@ let ammoCount = document.getElementById('ammoCount')
 function updateDisplay() {
     counterDisp.innerHTML = orbCount;
     ammoCount.innerHTML = ammo;
+    pointsHTML.innerHTML = points;
 };
 updateDisplay()
+
+function GainAmmo(){
+    document.getElementById('ammoCount').style.color = "white";
+    document.getElementById('ammoCount').style.opacity = 1;
+    document.getElementById('ammoCount').style.size =" 20px";
+    setTimeout(() => {
+        document.getElementById('ammoCount').style.color = "black";
+        document.getElementById('ammoCount').style.opacity = .7;
+        document.getElementById('ammoCount').style.size = " 10px";
+    }, 2000) 
+}
 
 
 document.getElementById("restart").addEventListener("click", restartGame, true)
@@ -83,16 +100,20 @@ if (havePointerLock) {
             controls.enabled = true;
             blocker.style.display = 'none';
             
+            
         } else {
+            
             controls.enabled = false;
             blocker.style.display = '-webkit-box';
             blocker.style.display = '-moz-box';
             blocker.style.display = 'box';
             instructions.style.display = '';
+            
         }
     };
     let pointerlockerror = function (event) {
         instructions.style.display = '';
+
     };
     // Hook pointer lock state change events
     document.addEventListener('pointerlockchange', pointerlockchange, false);
@@ -127,7 +148,10 @@ if (havePointerLock) {
 
 
 init();
+
 animate();
+
+
 
 
 // Make variables
@@ -303,10 +327,9 @@ function init() {
         orbs.push(sent_light)
         
     }
-    var listener = new THREE.AudioListener();
+    
     camera.add(listener);
-    let sounds = {}
-    let hits = {}
+    
     var audioLoader = new THREE.AudioLoader();
     // SMALL ENEMIES
     for (let i = 0; i < 6; i++) {
@@ -328,7 +351,10 @@ function init() {
             sounds[i].setRolloffFactor(5)
             // sound.setMaxDistance(10)
             sounds[i].setLoop(true)
-            sounds[i].play();
+            if(!sounds[i].isPlaying){
+
+                sounds[i].play();
+            }
         });
         
         audioLoader.load('./src/sounds/hit.mp3', function (buffer) {
@@ -408,11 +434,11 @@ function init() {
     enemy.add(bossFX)
     enemy.add(bossShoot)
    
-    level2 = new Level2(scene, smallEnemies)
-    var water = level2.makeGround()
-    level2.scene = scene
-    scene.add(water)
-    level2Plane.push(water)
+    // level2 = new Level2(scene, smallEnemies)
+    // var water = level2.makeGround()
+    // level2.scene = scene
+    // scene.add(water)
+    // level2Plane.push(water)
 
     /// TREESSSS
 
@@ -633,11 +659,11 @@ function addEnemyOrb(){
         
         enemyOrbs.push(bullet)
         scene.add(bullet)
-        if (enemyOrbs.length < 5 && enemy.health <= 600 && enemy.health > 0) {
+        if (enemyOrbs.length < 5 && enemy.health <= bossHealth && enemy.health > 0 && play) {
             playShoot()
         }
         
-    }, 3000)
+    }, bossRate)
 }
 
 function animateEnemyOrbs(){
@@ -656,7 +682,7 @@ function animateEnemyOrbs(){
             bullet.translateZ(unitVector[1]* 5);
             bullet.translateY(unitVector[2]* 5);
             if (Math.floor(bullet.position.distanceTo(person)) === (Math.floor(person.distanceTo(enemy.position)) - 15)){
-                // debugger
+                
                 console.log("SHOOT")
                 
             }
@@ -721,30 +747,53 @@ function checkCollisions(pos){
         let pos = raycaster.ray.origin.copy(controls.getObject().position);
         let posX = Math.floor(pos.x)
         let posZ = Math.floor(pos.z)
-        if(moveForward){
-            posZ -= 4
-        }
-        if(moveBackward){
-            posZ += 4
-        }
-        if(moveLeft){
-            posX -= 4
-        }
-        if(moveRight){
-            posX += 4
+        // if(moveForward){
+        //     posZ -= 4
+        // }
+        // if(moveBackward){
+        //     posZ += 4
+        // }
+        // if(moveLeft){
+        //     posX -= 4
+        // }
+        // if(moveRight){
+        //     posX += 4
+        // }
+        let X = Math.abs(tree.position.x - posX)
+        let Z = Math.abs(tree.position.z - posZ)
+        if(X <= 12 && Z <= 12){
+            
+            let checkX = Math.floor(X) * 5
+            let checkZ = Math.floor(Z) * 5
+            if(checkZ > checkX){
+                if(checkZ > -checkX){
+                    
+                    run = false
+                    moveForward = false
+                }else{
+                    moveRight = false
+
+                }
+            }else{
+                if(checkZ > -checkX){
+                    moveLeft = false
+                
+                }else{
+                    moveBackward = false
+
+                }
+            }
         }
         
-        
-        
-        if ((tree.position.x + 5  >= posX && tree.position.x - 5 <= posX) && (tree.position.z + 5 >= posZ && tree.position.z - 5 <= posZ)){
+        // if ((tree.position.x + 5  >= posX && tree.position.x - 5 <= posX) && (tree.position.z + 5 >= posZ && tree.position.z - 5 <= posZ)){
            
-            velocity.x = 0;
-            velocity.z = 0;
-            moveBackward = false
-            moveForward = false
-            moveLeft = false
-            moveRight = false
-        }
+        //     velocity.x = 0;
+        //     velocity.z = 0;
+        //     moveBackward = false
+        //     moveForward = false
+        //     moveLeft = false
+        //     moveRight = false
+        // }
     })
 
     cubes.forEach((cube, idx) => {
@@ -757,6 +806,8 @@ function checkCollisions(pos){
                 (pos.z >= (ammoPos.z - 10) && pos.z <= (ammoPos.z + 10))
             ) {
                 ammo += 100
+                
+                GainAmmo()
                 scene.remove(cube)
                 soundEngine.ammo()
                 delete cubes[idx]
@@ -795,13 +846,14 @@ function checkCollisions(pos){
             if (enemy != "undefined") {
             let enemyPos = enemy.children[0].position
             if (
-                (pos.x >= (enemyPos.x - 10) && pos.x <= (enemyPos.x + 10)) &&
-                (pos.y >= (enemyPos.y - 10) && pos.y <= (enemyPos.y + 10)) &&
-                (pos.z >= (enemyPos.z - 10) && pos.z <= (enemyPos.z + 10))
+                (pos.x >= (enemyPos.x - 15) && pos.x <= (enemyPos.x + 15)) &&
+                (pos.y >= (enemyPos.y - 15) && pos.y <= (enemyPos.y + 15)) &&
+                (pos.z >= (enemyPos.z - 15) && pos.z <= (enemyPos.z + 15))
             ) {
                 console.log(smallEnemies)
                 
                 smallEnemyHit()
+                
                 scene.remove(enemy)
                 removeSmallEnemy(enemy, index)
             }
@@ -829,7 +881,10 @@ function checkOrbCollision(orb, idx2, object){
         enemy.material.color.r -= .02;
         enemy.material.color.g += .02;
         
-        
+        if(enemy.health <= 0){
+            removeSmallEnemy(enemy, 0)
+            points += 500
+        }
             
 
     }
@@ -851,8 +906,10 @@ function checkOrbCollision(orb, idx2, object){
                 
                 small.children[0].health -= 8
                 if (small.children[0].health <= 0) {
-
+                    points += 125
                     die(small, index)
+                    updateDisplay()
+                    
 
                 }
                 small.children[0].hit = true
@@ -961,54 +1018,68 @@ function removeUserOrb(orb, index){
 
 function die(orb, index){
     orb.children[0].opacity -= .1
+    
     setTimeout(()=> {
         scene.remove(orb)
         removeSmallEnemy(orb, index)
+        removeLevel = true
     }, 500)
     
 }
 let smallTime
+let smallSpeed = .8
+
 function animateSmallEnemies(){
+
     let copy = smallEnemies
     copy.forEach((orb, index) => {
     let pos = raycaster.ray.origin.copy(controls.getObject().position);
     const array = [pos.x - orb.start.x, pos.z - orb.start.z]
-    
-        var time = performance.now();
-        var delta = (time - prevTime) / 1000;
-        const mag = Math.sqrt(array.reduce((acc, ele) => acc + (ele * ele)))
-        const unitVector = array.map(ele => ele / mag)
-        if(!orb.children[0].hit){
+  
+    let alpha 
+    alpha += delta;
+    let orbPos = orb.children[0].position
+    let dist = orb.children[0].position.distanceTo(pos)
+    let finalSpeed = dist / 30
+    let hitSpeed = dist / 80
+    let v = new Vector3(1, 0, 1).normalize()
+    if (!orb.children[0].hit) {
+    orb.children[0].position.lerp(pos, (delta / finalSpeed))
+    orb.children[1].position.lerp(pos, (delta / finalSpeed))
+    orb.children[2].position.lerp(pos, (delta / finalSpeed))
+    orb.children[3].position.lerp(pos, (delta / finalSpeed))
+    }
+    // let mag = Math.sqrt(array.reduce((acc, ele) => (ele * ele)))
+    //     let unitVector = array.map(ele => ele / mag)
+    //     // if(!orb.children[0].hit){
             
-            smallTime = 0
-                orb.children[0].position.x += (unitVector[0] * .8);
-                orb.children[1].position.x += (unitVector[0] * .8);
-                orb.children[2].position.x += (unitVector[0] * .8);
-                orb.children[3].position.x += (unitVector[0] * .8);
-                orb.children[0].position.z += (unitVector[1] * .8);
-                orb.children[1].position.z += (unitVector[1] * .8);
-                orb.children[2].position.z += (unitVector[1] * .8);
-                orb.children[3].position.z += (unitVector[1] * .8);
+    //     //     smallTime = 0
+    //     //         orb.children[0].translateX(unitVector[0] * .5);
+    //     //         orb.children[1].translateX(unitVector[0] * .5);
+    //     //         orb.children[2].translateX(unitVector[0] * .5);
+    //     //         orb.children[3].translateX(unitVector[0] * .5);
+    //     //         orb.children[0].translateZ(unitVector[1] * .5);
+    //     //         orb.children[1].translateZ(unitVector[1] * .5);
+    //     //         orb.children[2].translateZ(unitVector[1] * .5);
+    //     //         orb.children[3].translateZ(unitVector[1] * .5);
 
             
             
     
-        }
+    //     // }
         if(orb.children[0].hit){
             
-            orb.children[3].play()
+            if(!orb.children[3].isPlaying){
+                orb.children[3].play()
+            }
             delayTrigger(orb.children[0])
-            orb.children[0].translateX((unitVector[0] * -1) * 10);
-            orb.children[1].translateX((unitVector[0] * -1) * 10);
-            orb.children[2].translateX((unitVector[0] * -1) * 10);
-            orb.children[3].translateX((unitVector[0] * -1) * 10);
-            orb.children[0].translateZ((unitVector[1] * -1) * 10);
-            orb.children[1].translateZ((unitVector[1] * -1) * 10);
-            orb.children[2].translateZ((unitVector[1] * -1) * 10);
-            orb.children[3].translateZ((unitVector[1] * -1) * 10);
+            orb.children[0].position.lerp(pos, (delta / hitSpeed)*-1)
+            orb.children[1].position.lerp(pos, (delta / hitSpeed)*-1)
+            orb.children[2].position.lerp(pos, (delta / hitSpeed)*-1)
+            orb.children[3].position.lerp(pos, (delta / hitSpeed)*-1)
             
-            orb.children[0].material.opacity -= .01;
-            orb.children[1].intensity += .01
+            // orb.children[0].material.opacity -= .01;
+            // orb.children[1].intensity += .01
             
         }
 
@@ -1033,14 +1104,14 @@ function delayTrigger(orb, index){
     if(orb.health > 0){
         setTimeout(() => {
             orb.hit = false;
-            orb.material.opacity = 1
-        }, 300)
+            // orb.material.opacity = 1
+        }, 500)
     }
    
 
 }
 function removeSmallEnemy(small, index){
-    
+    small.children[3].play()
     small.children[2].stop()
     scene.remove(small)
     delete smallEnemies[index]
@@ -1080,7 +1151,7 @@ function animateElevator(elevator){
 }
 
 function checkCube(arr){
-    debugger
+    
     arr[0].object.name === "elevator"
     
 }
@@ -1098,10 +1169,10 @@ function animateStairs(){
     }
 }
 
-function level2Generate(){
-    level2.makeSmallEnemies(scene, smallEnemies)
-    level2.makeSteps(level2.scene, objects)
-}
+// function level2Generate(){
+//     level2.makeSmallEnemies(scene, smallEnemies)
+//     level2.makeSteps(level2.scene, objects)
+// }
 
 const limitEnemy = 50
 let startEnemy = 0
@@ -1123,7 +1194,7 @@ function animateEnemy(){
     if(begin){
         
         enemyLight.intensity = 30
-        enemy.health = 200
+        enemy.health = bossHealth
         enemy.material.color.r = 0.9;
         enemy.material.color.g = 0.0;
         enemy.material.color.b = 0.0;
@@ -1175,6 +1246,158 @@ function animateEnemy(){
     }
 
 }
+let levelProgress = 1
+let numEnemies = 10
+let count = 0
+function levelNext(){
+    enemy.health = bossHealth
+    levelProgress += 1
+    document.getElementById('nextLevel').style.display = "flex"
+    document.getElementById('levelnum').innerHTML = levelProgress;
+    restartLevel = false
+    removeLevel = false
+    play = false
+    count += 1
+    if(count === 1){
+
+    
+    setTimeout(() => {
+        bossHealth += 100
+        smallSpeed += .02
+        if (levelProgress > 2){
+            numEnemies += 1
+        }
+
+    
+    for (let i = 0; i < numEnemies; i++) {
+        const sentinel = new Sentinel;
+
+        const light = new THREE.PointLight("rgb(255, 222, 84)", 10, 100);
+        const sent_light = new THREE.Group()
+        sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
+        sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
+        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
+        light.position.x = sentinel.position.x
+        light.position.y = sentinel.position.y
+        light.position.z = sentinel.position.z
+        sent_light.add(sentinel)
+        sent_light.add(light)
+        scene.add(sent_light)
+        orbs.push(sent_light)
+
+    }
+    var listener = new THREE.AudioListener();
+    camera.add(listener);
+    let sounds = {}
+    let hits = {}
+    var audioLoader = new THREE.AudioLoader();
+    // SMALL ENEMIES
+    for (let i = 0; i < 6; i++) {
+        const small = new SmallEnemy(camera);
+
+        sounds[i] = new THREE.PositionalAudio(listener);
+        hits[i] = new THREE.PositionalAudio(listener);
+
+        // create the PositionalAudio object (passing in the listener)
+
+
+        // load a sound and set it as the PositionalAudio object's buffer
+
+        // var audioLoader2 = new THREE.AudioLoader();
+        audioLoader.load('./src/sounds/boss.mp3', function (buffer) {
+            sounds[i].setBuffer(buffer);
+            sounds[i].setRefDistance(20);
+            sounds[i].setVolume(1)
+            sounds[i].setRolloffFactor(5)
+            // sound.setMaxDistance(10)
+            sounds[i].setLoop(true)
+            sounds[i].play();
+        });
+
+        audioLoader.load('./src/sounds/hit.mp3', function (buffer) {
+            hits[i].setBuffer(buffer);
+            hits[i].setRefDistance(50);
+            hits[i].setVolume(1)
+            hits[i].setRolloffFactor(5)
+            // sound.setMaxDistance(10)
+            hits[i].setLoop(false)
+
+        });
+
+
+
+        const light = new THREE.PointLight("rgb(250, 0, 0)", 20, 100);
+        const smallEnemy = new THREE.Group()
+        small.position.x = Math.floor(Math.random() * 20 - 9) * 40;
+        small.position.z = Math.floor(Math.random() * 100 - 100) * 10;
+        small.position.y = 10;
+        light.position.x = small.position.x
+        light.position.y = small.position.y + 20
+        light.position.z = small.position.z
+        sounds[i].position.x = small.position.x
+        sounds[i].position.y = small.position.y + 20
+        sounds[i].position.z = small.position.z
+        hits[i].position.x = small.position.x
+        hits[i].position.y = small.position.y
+        hits[i].position.z = small.position.z
+
+        smallEnemy.add(small)
+        smallEnemy.add(light)
+        scene.add(smallEnemy)
+        smallEnemy.add(sounds[i])
+        smallEnemy.add(hits[i])
+
+        smallEnemy.start = small.position
+
+        smallEnemies.push(smallEnemy)
+
+    }
+
+    const bossFX = new THREE.PositionalAudio(listener);
+    const bossShoot = new THREE.PositionalAudio(listener);
+    enemy = new Enemy();
+
+    audioLoader.load('./src/sounds/bossFX.mp3', function (buffer) {
+
+        bossFX.setBuffer(buffer);
+        bossFX.setRefDistance(300);
+        bossFX.setRolloffFactor(20)
+        bossFX.setLoop(true);
+        bossFX.setVolume(1);
+
+    });
+    audioLoader.load('./src/sounds/bossShoot.mp3', function (buffer) {
+
+        bossShoot.setBuffer(buffer);
+        bossShoot.setRefDistance(300);
+        bossShoot.setRolloffFactor(20)
+        bossShoot.setLoop(false);
+        bossShoot.setVolume(.5);
+
+    });
+    enemy.position.x = 120;
+    enemy.position.z = 180;
+    enemy.position.y = 150;
+    enemy.health = 2000;
+    bossFX.position.x = enemy.position.x
+    bossFX.position.y = enemy.position.y
+    bossFX.position.z = enemy.position.z
+    bossShoot.position.x = enemy.position.x
+    bossShoot.position.y = enemy.position.y
+    bossShoot.position.z = enemy.position.z
+    enemy.material.transparent = true
+    enemy.material.opacity = 1
+    scene.add(enemy)
+    enemy.add(bossFX)
+    enemy.add(bossShoot)
+    begin = true
+    document.getElementById('nextLevel').style.display = "none"
+    count = 0
+    play = true
+    
+    }, 4000)
+    }
+}
 
 function instructionText(){
     
@@ -1190,17 +1413,19 @@ function instructionText(){
         }, 3000)
         setTimeout(() => {
                 document.getElementById('goals').style.display = "none"
-                blocker.style.display = 'none';
+                
         }, 8000)
     }
 }
 
-
+var delta
 let bang = 0;
 let start
 let nextLevel = 0
+let restartLevel = false
 // Animate
 function animate() {
+
     const traj = camera.getWorldDirection(vector)
     start = requestAnimationFrame(animate);
     var time = performance.now();
@@ -1226,19 +1451,19 @@ function animate() {
         var isOnObject = intersections.length > 0;
         let plane2 = []
         
-        plane2 = raycaster.intersectObjects(level2Plane)
-        if(pos.y > 340){
-            if(nextLevel === 0){
-                level2Generate()
-                nextLevel = false
-            }
-            level2.update(renderer, scene, camera)
+        // plane2 = raycaster.intersectObjects(level2Plane)
+        // if(pos.y > 340){
+        //     if(nextLevel === 0){
+        //         level2Generate()
+        //         nextLevel = false
+        //     }
+        //     level2.update(renderer, scene, camera)
 
-        }
+        // }
         
-        var isOnplane2 = plane2.length > 0;
+        // var isOnplane2 = plane2.length > 0;
         
-        var delta = (time - prevTime) / 1000;
+        delta = (time - prevTime) / 1000;
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
         velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
@@ -1274,16 +1499,16 @@ function animate() {
 
             }
         }
-        if (isOnplane2 === true) {
-            velocity.y = Math.max(0, velocity.y);
-            canJump = true;
-        }
-        if (isOnplane2 === true) {
+        // if (isOnplane2 === true) {
+        //     velocity.y = Math.max(0, velocity.y);
+        //     canJump = true;
+        // }
+        // if (isOnplane2 === true) {
 
-            velocity.y = Math.max(0, velocity.y);
-            canJump = true;
+        //     velocity.y = Math.max(0, velocity.y);
+        //     canJump = true;
 
-        }
+        // }
 
         if (run){
             
@@ -1331,8 +1556,15 @@ function animate() {
         }
         
         if(enemy.health <= 0){
+            restartLevel = true
             removeAllOrbs()
+            scene.remove(enemy)
+            // enemy.health = 2000
             animateStairs()
+        }
+        if(restartLevel && removeLevel){
+            levelNext()
+            
         }
 
         if(player.health <= 0){
@@ -1345,8 +1577,9 @@ function animate() {
         
         prevTime = time;
     }
+   
+        renderer.render(scene, camera);
     
-    renderer.render(scene, camera);
 }
 
 

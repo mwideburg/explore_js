@@ -25,7 +25,7 @@ Level2.prototype.makeSmallEnemies = function (scene, smallEnemies){
     let geometry2 = new THREE.BoxBufferGeometry(100, 100, 100);
     material = new THREE.MeshBasicMaterial({ color: 0x00f000 });
 
-
+    
 
 
     cubeA = new THREE.Mesh(geometry2, material);

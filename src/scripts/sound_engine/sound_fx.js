@@ -30,7 +30,8 @@ SoundFX.prototype.shoot = function(){
         that.sound.setBuffer(buffer);
         that.sound.setLoop(false);
         that.sound.setVolume(.5);
-        that.sound.play();
+        
+        that.sound.isPlaying ? null : that.sound.play();
     });
 }
 SoundFX.prototype.hitPlayer = function () {
@@ -40,7 +41,8 @@ SoundFX.prototype.hitPlayer = function () {
         that.hit.setBuffer(buffer);
         that.hit.setLoop(false);
         that.hit.setVolume(1);
-        that.hit.play();
+        
+        that.hit.isPlaying ? null : that.hit.play();
     });
 }
 // SoundFX.prototype.move = function(keyDown){

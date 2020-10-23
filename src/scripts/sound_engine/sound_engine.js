@@ -50,9 +50,14 @@ SoundEngine.prototype.move = function(keyDown){
         that.move.setLoop(true);
         // that.move.setLoopStart(10000)
         that.move.setVolume(.7);
-        that.move.play();
+        // that.move.play();
+        if(keyDown && !that.move.isPlaying){
+            that.move.play()
+        }else if(!keyDown){
+            that.move.pause()
+        }
         
-        keyDown ? that.move.play() : that.move.pause()
+        
     });
     
 }
