@@ -34,6 +34,7 @@ let objects = [];
 let level2Plane = [];
 let level2;
 let cubes = [];
+let isPlay = true
 let trees = [];
 let raycaster;
 let blocker = document.getElementById('blocker');
@@ -99,23 +100,27 @@ if (havePointerLock) {
     let element = document.body;
     let pointerlockchange = function (event) {
         if (document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element) {
+            isPlay = true
             controlsEnabled = true;
             controls.enabled = true;
             blocker.style.display = 'none';
-            
-            
+            console.log('FIRST POINTER LOCK')
         } else {
-            
+            isPlay = false
+            console.log('SECOND POINTER LOCK')
+            cancelAnimationFrame(animate)
             controls.enabled = false;
             blocker.style.display = '-webkit-box';
             blocker.style.display = '-moz-box';
             blocker.style.display = 'box';
             instructions.style.display = '';
+
             
         }
     };
     let pointerlockerror = function (event) {
         instructions.style.display = '';
+        animate()
 
     };
     // Hook pointer lock state change events
@@ -127,6 +132,8 @@ if (havePointerLock) {
     document.addEventListener('webkitpointerlockerror', pointerlockerror, false);
     instructions.addEventListener('click', function (event) {
         instructions.style.display = 'none';
+        
+        console.log('THIRD')
         // Ask the browser to lock the pointer
         element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
         if (/Firefox/i.test(navigator.userAgent)) {
@@ -142,6 +149,8 @@ if (havePointerLock) {
             element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
             element.requestFullscreen();
         } else {
+            console.log('FORTH')
+            
             element.requestPointerLock();
         }
     }, false);
@@ -700,6 +709,21 @@ function animateEnemyOrbs(){
         enemyOrbs = []
     }
 }
+function createCubes(){
+    cubeA = new THREE.Mesh(geometry2, material);
+    cubeB = new THREE.Mesh(geometry2, material);
+    cubeC = new THREE.Mesh(geometry2, material);
+    cubeA.position.set(200, 10, 300);
+    cubeB.position.set(-100, 10, 300);
+    cubeC.position.set(20, 10, 400);
+    scene.add(cubeA);
+    scene.add(cubeB);
+    scene.add(cubeC);
+
+    cubes.push(cubeA)
+    cubes.push(cubeB)
+    cubes.push(cubeC)
+}
 
 // Not sure what this does, but seemed legit from the source code
 function onWindowResize() {
@@ -815,10 +839,13 @@ function checkCollisions(pos){
                 soundEngine.ammo()
                 delete cubes[idx]
                 cube = false
-                updateDisplay(); 
+                updateDisplay();
             }
         }
     })
+    if(cubes < 1){
+
+    }
     if (enemy.health > 0) {
         let enemyPos = enemy.position
         if (
@@ -1078,6 +1105,7 @@ function animateSmallEnemies(){
         if(orb.children[0].hit){
             
             if(!orb.children[3].isPlaying){
+                
                 orb.children[3].play()
             }
             delayTrigger(orb.children[0])
@@ -1119,7 +1147,7 @@ function delayTrigger(orb, index){
 
 }
 function removeSmallEnemy(small, index){
-    small.children[3].play()
+    // small.children[3].play()
     small.children[2].stop()
     scene.remove(small)
     delete smallEnemies[index]
@@ -1438,6 +1466,17 @@ function instructionText(){
         }, 8000)
     }
 }
+const sprintBar = document.getElementById("sprint-bar")
+let width = 3000
+let sprintTime = 3000
+let startTime = 0
+function animateSprintBar(){
+    if( startTime < sprintTime){
+        startTime += 1
+        width -= 1000 * delta
+        sprintBar.style.width = `${width / 30}%`
+    }
+}
 
 var delta
 let bang = 0;
@@ -1445,7 +1484,9 @@ let start
 let nextLevel = 0
 let restartLevel = false
 // Animate
+
 function animate() {
+    // if(!isPlay) return
 
     const traj = camera.getWorldDirection(vector)
     var time = performance.now();
@@ -1464,7 +1505,7 @@ function animate() {
        
         raycaster.ray.origin.copy(controls.getObject().position);
         raycaster.ray.origin.y -= 10;
-        checkCollisions(pos)
+        
 
 
         var intersections = raycaster.intersectObjects(objects);
@@ -1533,9 +1574,18 @@ function animate() {
 
         if (run){
             
-            if(time - wait < 3000)
-            velocity.z -= 400.0 * delta;
-        } 
+            if(time - wait < 3000){
+                velocity.z -= 400.0 * delta;
+                animateSprintBar()
+                
+                
+
+            }
+        } else {
+            sprintBar.style.width = "100%"
+            width = 3000
+            startTime = 0
+        }
         
         if(hit){
             velocity.z += 10000.0 * delta;
@@ -1560,47 +1610,53 @@ function animate() {
             controls.getObject().position.y = 10;
             canJump = true;
         }
-        if (orbAlive.length > 0) {
+        if(isPlay){
 
-            orbAlive.forEach((orb, index) => {
-                animateOrb(orb, index, traj)
-                checkOrbCollision(orb, index, enemy)
-            })
-        }
 
-        if(smallEnemies.every(ele => ele === "undefined")){
-            
-            
-            animateEnemy()
-            animateEnemyOrbs()
-            
-        }
+
+            checkCollisions(pos)
+
         
-        if(enemy.health <= 0){
-            restartLevel = true
-            removeAllOrbs()
-            scene.remove(enemy)
-            // enemy.health = 2000
-            animateStairs()
-        }
-        if(restartLevel && removeLevel){
-            levelNext()
-            
-        }
+            if (orbAlive.length > 0) {
 
-        if(player.health <= 0){
-            endGame()
-                   
-        }
-        if (pos.z < 500) {
-            animateSmallEnemies()
-        }
-        checkBounds(pos)
-        if(resetGame){
-            cancelAnimationFrame(start)
+                orbAlive.forEach((orb, index) => {
+                    animateOrb(orb, index, traj)
+                    checkOrbCollision(orb, index, enemy)
+                })
+            }
+
+            if(smallEnemies.every(ele => ele === "undefined")){
+                
+                
+                animateEnemy()
+                animateEnemyOrbs()
+                
+            }
             
+            if(enemy.health <= 0){
+                restartLevel = true
+                removeAllOrbs()
+                scene.remove(enemy)
+                // enemy.health = 2000
+                animateStairs()
+            }
+            if(restartLevel && removeLevel){
+                levelNext()
+                
+            }
+
+            if(player.health <= 0){
+                endGame()
+                    
+            }
+            if (pos.z < 500) {
+                animateSmallEnemies()
+            }
+            checkBounds(pos)
+            if(resetGame) {
+                cancelAnimationFrame(start)
+            }
         }
-       
         prevTime = time;
     }
     
