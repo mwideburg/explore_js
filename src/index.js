@@ -12,7 +12,8 @@ import SmallEnemy from './scripts/enemies/small_enemy';
 import Level2 from './scripts/level_2/level_2';
 import SoundEngine from './scripts/sound_engine/sound_engine';
 import SoundFX from './scripts/sound_engine/sound_fx';
-import { Vector3 } from 'three';
+import { AnimationAction, Vector3 } from 'three';
+let resetGame = false
 let bossHealth = 200
 let bossRate = 3000
 let removeLevel = false
@@ -90,6 +91,8 @@ function GainAmmo(){
 
 
 document.getElementById("restart").addEventListener("click", restartGame, true)
+document.getElementById("restart-level").addEventListener("click", restartGame, true)
+
 // https://www.html5rocks.com/en/tutorials/pointerlock/intro/
 var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 if (havePointerLock) {
@@ -979,18 +982,23 @@ function wallOstacle() {
     
 }
 function endGame(){
-    document.getElementById("endgame").style.display = "block"
     cancelAnimationFrame(start)
+    document.exitPointerLock();
+    document.getElementById("endgame").style.display = "block"
 
 }
 function restartGame(){
+    console.log('RESTART')
     player.health = 100;
+    
+
+    // debugger
+    
     document.getElementById("endgame").style.display = "none"
-    init()
-    animate()
-    
-    
-    
+    document.getElementById("outOfBounds").style.display = "none"
+
+    resetGame = false
+    location.reload() 
 }
 function remove(orb, index){
     
@@ -1399,6 +1407,19 @@ function levelNext(){
     }
 }
 
+
+function checkBounds(pos){
+    if(pos.z > 1000){
+        document.exitPointerLock();
+        document.getElementById('outOfBounds').style.display = 'flex'
+        controls.enabled = false
+        console.log("OUTOFBOUNDS")
+        
+        // resetGame = true
+        
+    }
+}
+
 function instructionText(){
     
     document.getElementById('tutorial').style.display = "flex"
@@ -1427,8 +1448,8 @@ let restartLevel = false
 function animate() {
 
     const traj = camera.getWorldDirection(vector)
-    start = requestAnimationFrame(animate);
     var time = performance.now();
+    start = requestAnimationFrame(animate);
     // This will give all the PointLock controls
     if (controlsEnabled) {
         
@@ -1574,10 +1595,15 @@ function animate() {
         if (pos.z < 500) {
             animateSmallEnemies()
         }
-        
+        checkBounds(pos)
+        if(resetGame){
+            cancelAnimationFrame(start)
+            
+        }
+       
         prevTime = time;
     }
-   
+    
         renderer.render(scene, camera);
     
 }
