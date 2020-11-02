@@ -329,7 +329,7 @@ function init() {
         const sent_light = new THREE.Group()
         sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
         sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
-        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
+        sentinel.position.y = 5;
         light.position.x = sentinel.position.x
         light.position.y = sentinel.position.y
         light.position.z = sentinel.position.z
@@ -1312,35 +1312,15 @@ function levelNext(){
     setTimeout(() => {
         bossHealth += 100
         smallSpeed += .02
-        if (levelProgress > 2){
-            numEnemies += 1
-        }
+        
+        numEnemies += 1
+        
 
     
-    for (let i = 0; i < numEnemies; i++) {
-        const sentinel = new Sentinel;
-
-        const light = new THREE.PointLight("rgb(255, 222, 84)", 10, 100);
-        const sent_light = new THREE.Group()
-        sentinel.position.x = Math.floor(Math.random() * 20 - 9) * 40;
-        sentinel.position.z = Math.floor(Math.random() * 20 - 5) * 60;
-        sentinel.position.y = Math.floor(Math.random() * 30) + 5;
-        light.position.x = sentinel.position.x
-        light.position.y = sentinel.position.y
-        light.position.z = sentinel.position.z
-        sent_light.add(sentinel)
-        sent_light.add(light)
-        scene.add(sent_light)
-        orbs.push(sent_light)
-
-    }
-    var listener = new THREE.AudioListener();
-    camera.add(listener);
-    let sounds = {}
-    let hits = {}
+    
     var audioLoader = new THREE.AudioLoader();
     // SMALL ENEMIES
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < numEnemies; i++) {
         const small = new SmallEnemy(camera);
 
         sounds[i] = new THREE.PositionalAudio(listener);
@@ -1400,8 +1380,8 @@ function levelNext(){
         smallEnemies.push(smallEnemy)
 
     }
-    const bossLight = new THREE.PointLight("rgb(250, 0 ,0)", 20, 600)
-    
+    enemyLight.intensity = 0
+    scene.add(enemyLight)
     const bossFX = new THREE.PositionalAudio(listener);
     const bossShoot = new THREE.PositionalAudio(listener);
     enemy = new Enemy();
@@ -1431,16 +1411,12 @@ function levelNext(){
     bossFX.position.x = enemy.position.x
     bossFX.position.y = enemy.position.y
     bossFX.position.z = enemy.position.z
-    bossLight.position.x = enemy.position.x
-    bossLight.position.y = enemy.position.y
-    bossLight.position.z = enemy.position.z
     bossShoot.position.x = enemy.position.x
     bossShoot.position.y = enemy.position.y
     bossShoot.position.z = enemy.position.z
     enemy.material.transparent = true
     enemy.material.opacity = 1
     scene.add(enemy)
-    scene.add(bossLight)
     enemy.add(bossFX)
     enemy.add(bossShoot)
     begin = true
