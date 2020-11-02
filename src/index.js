@@ -279,13 +279,13 @@ function init() {
     
     document.addEventListener("mousedown", shootOrb, true)
     function shootOrb(){
-        soundFX.shoot()
         if(player.shoot = false){
             player.shoot = true
         }
         if(clickCount){
             
             if(ammo > 0){
+                soundFX.shoot()
     
     
                 let orbPos = raycaster.ray.origin.copy(controls.getObject().position);
@@ -669,9 +669,9 @@ function addEnemyOrb(){
         bullet.position.y -= 15
         bullet.traj = raycaster.ray.origin.copy(controls.getObject().position);
         
-        enemyOrbs.push(bullet)
-        scene.add(bullet)
         if (enemyOrbs.length < 5 && enemy.health <= bossHealth && enemy.health > 0 && play) {
+            enemyOrbs.push(bullet)
+            scene.add(bullet)
             playShoot()
         }
         
@@ -710,19 +710,25 @@ function animateEnemyOrbs(){
     }
 }
 function createCubes(){
-    cubeA = new THREE.Mesh(geometry2, material);
-    cubeB = new THREE.Mesh(geometry2, material);
-    cubeC = new THREE.Mesh(geometry2, material);
-    cubeA.position.set(200, 10, 300);
-    cubeB.position.set(-100, 10, 300);
-    cubeC.position.set(20, 10, 400);
-    scene.add(cubeA);
-    scene.add(cubeB);
-    scene.add(cubeC);
-
-    cubes.push(cubeA)
-    cubes.push(cubeB)
-    cubes.push(cubeC)
+    // cubes = [1,2,3]
+    setTimeout(() => {
+        cubes = []
+        let geometry2 = new THREE.BoxBufferGeometry(10, 10, 10);
+        let material = new THREE.MeshBasicMaterial({ color: 0x00f000 });
+        cubeA = new THREE.Mesh(geometry2, material);
+        cubeB = new THREE.Mesh(geometry2, material);
+        cubeC = new THREE.Mesh(geometry2, material);
+        cubeA.position.set(200, 10, 300);
+        cubeB.position.set(-100, 10, 300);
+        cubeC.position.set(20, 10, 400);
+        scene.add(cubeA);
+        scene.add(cubeB);
+        scene.add(cubeC);
+    
+        cubes.push(cubeA)
+        cubes.push(cubeB)
+        cubes.push(cubeC)
+    }, 2000)
 }
 
 // Not sure what this does, but seemed legit from the source code
@@ -736,7 +742,7 @@ function playShoot(){
         enemy.children[1].play()
  
 }
-
+let dupCubes = []
 function checkCollisions(pos){
   
     orbs.forEach((orb, index) => {
@@ -823,6 +829,7 @@ function checkCollisions(pos){
         // }
     })
 
+
     cubes.forEach((cube, idx) => {
 
         if (cube != "undefined"){
@@ -837,14 +844,16 @@ function checkCollisions(pos){
                 GainAmmo()
                 scene.remove(cube)
                 soundEngine.ammo()
-                delete cubes[idx]
+                cubes.splice(idx, 1)
                 cube = false
                 updateDisplay();
+                
+                
             }
         }
     })
-    if(cubes < 1){
-
+    if(cubes.length < 1){
+        createCubes()
     }
     if (enemy.health > 0) {
         let enemyPos = enemy.position
@@ -941,9 +950,11 @@ function checkOrbCollision(orb, idx2, object){
                     updateDisplay()
                     
 
+                }else{
+
+                    small.children[0].hit = true
+                    small.children[1].intensity += 15;
                 }
-                small.children[0].hit = true
-                small.children[1].intensity += 15;
     
                 
                
@@ -1052,7 +1063,8 @@ function removeUserOrb(orb, index){
 }
 
 function die(orb, index){
-    orb.children[0].opacity -= .1
+    debugger
+    orb.children[0].material.opacity -= .1
     
     setTimeout(()=> {
         scene.remove(orb)
@@ -1293,9 +1305,9 @@ function levelNext(){
     restartLevel = false
     removeLevel = false
     play = false
+    cancelAnimationFrame(animate)
     count += 1
     if(count === 1){
-
     
     setTimeout(() => {
         bossHealth += 100
@@ -1388,7 +1400,8 @@ function levelNext(){
         smallEnemies.push(smallEnemy)
 
     }
-
+    const bossLight = new THREE.PointLight("rgb(250, 0 ,0)", 20, 600)
+    
     const bossFX = new THREE.PositionalAudio(listener);
     const bossShoot = new THREE.PositionalAudio(listener);
     enemy = new Enemy();
@@ -1418,12 +1431,16 @@ function levelNext(){
     bossFX.position.x = enemy.position.x
     bossFX.position.y = enemy.position.y
     bossFX.position.z = enemy.position.z
+    bossLight.position.x = enemy.position.x
+    bossLight.position.y = enemy.position.y
+    bossLight.position.z = enemy.position.z
     bossShoot.position.x = enemy.position.x
     bossShoot.position.y = enemy.position.y
     bossShoot.position.z = enemy.position.z
     enemy.material.transparent = true
     enemy.material.opacity = 1
     scene.add(enemy)
+    scene.add(bossLight)
     enemy.add(bossFX)
     enemy.add(bossShoot)
     begin = true
@@ -1575,12 +1592,16 @@ function animate() {
         if (run){
             
             if(time - wait < 3000){
-                velocity.z -= 400.0 * delta;
+                // velocity.z -= 400.0 * delta;
+                if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
                 animateSprintBar()
                 
                 
 
             }
+
+
         } else {
             sprintBar.style.width = "100%"
             width = 3000
