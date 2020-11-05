@@ -1074,7 +1074,7 @@ function die(orb, index){
     
 }
 let smallTime
-let smallSpeed = .8
+let smallSpeed = 40
 
 function animateSmallEnemies(){
 
@@ -1087,7 +1087,7 @@ function animateSmallEnemies(){
     alpha += delta;
     let orbPos = orb.children[0].position
     let dist = orb.children[0].position.distanceTo(pos)
-    let finalSpeed = dist / 30
+    let finalSpeed = dist / smallSpeed
     let hitSpeed = dist / 80
     let v = new Vector3(1, 0, 1).normalize()
     if (!orb.children[0].hit) {
@@ -1311,7 +1311,8 @@ function levelNext(){
     
     setTimeout(() => {
         bossHealth += 100
-        smallSpeed += .02
+        smallSpeed += 15
+        bossRate -= 500
         
         numEnemies += 1
         
