@@ -695,7 +695,7 @@ function animateEnemyOrbs(){
             bullet.translateY(unitVector[2]* 5);
             if (Math.floor(bullet.position.distanceTo(person)) === (Math.floor(person.distanceTo(enemy.position)) - 15)){
                 
-                console.log("SHOOT")
+                
                 
             }
          
@@ -780,18 +780,6 @@ function checkCollisions(pos){
         let pos = raycaster.ray.origin.copy(controls.getObject().position);
         let posX = Math.floor(pos.x)
         let posZ = Math.floor(pos.z)
-        // if(moveForward){
-        //     posZ -= 4
-        // }
-        // if(moveBackward){
-        //     posZ += 4
-        // }
-        // if(moveLeft){
-        //     posX -= 4
-        // }
-        // if(moveRight){
-        //     posX += 4
-        // }
         let X = Math.abs(tree.position.x - posX)
         let Z = Math.abs(tree.position.z - posZ)
         if(X <= 12 && Z <= 12){
