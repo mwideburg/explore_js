@@ -20,6 +20,7 @@ let removeLevel = false
 const player = {health: 100, start: true, arrows: false, shoot: false}
 let camera, scene, renderer, mixer;
 let clouds
+let intro = true
 let orbs = []
 let smallHit = false
 let enemy
@@ -932,9 +933,10 @@ function checkOrbCollision(orb, idx2, object){
                 removeUserOrb(orb, idx2)
                 
                 small.children[0].health -= 8
+                
                 if (small.children[0].health <= 0) {
                     points += 125
-                    die(small, index)
+                    
                     updateDisplay()
                     
 
@@ -1051,14 +1053,14 @@ function removeUserOrb(orb, index){
 }
 
 function die(orb, index){
-    debugger
-    orb.children[0].material.opacity -= .1
     
-    setTimeout(()=> {
+    
+    
+    
         scene.remove(orb)
         removeSmallEnemy(orb, index)
         removeLevel = true
-    }, 500)
+    
     
 }
 let smallTime
@@ -1078,7 +1080,7 @@ function animateSmallEnemies(){
     let finalSpeed = dist / smallSpeed
     let hitSpeed = dist / 80
     let v = new Vector3(1, 0, 1).normalize()
-    if (!orb.children[0].hit) {
+    if (!orb.children[0].hit && orb.children[0].health > 0) {
     orb.children[0].position.lerp(pos, (delta / finalSpeed))
     orb.children[1].position.lerp(pos, (delta / finalSpeed))
     orb.children[2].position.lerp(pos, (delta / finalSpeed))
@@ -1118,6 +1120,16 @@ function animateSmallEnemies(){
             // orb.children[1].intensity += .01
             
         }
+        if(orb.children[0].health <= 0){
+            orb.children[0].position.y -= .3
+            orb.children[1].intensity -= .2
+            orb.children[0].material.color.b += 10
+            orb.children[0].material.color.r -= 10
+            
+            if (orb.children[0].position.y < -10){
+                die(orb, index)
+            }
+        }
 
         if(orb.children[0].position.x === "NaN"){
 
@@ -1138,6 +1150,7 @@ function animateSmallEnemies(){
 
 function delayTrigger(orb, index){
     if(orb.health > 0){
+        orb.size -= .1
         setTimeout(() => {
             orb.hit = false;
             // orb.material.opacity = 1
@@ -1416,7 +1429,24 @@ function levelNext(){
     }, 4000)
     }
 }
-
+var angle = 0;
+var radius = 500; 
+var rotSpeed = .1
+function animateCamera(){
+    var x = camera.position.x,
+        z = camera.position.z;
+    camera.position.y = 150
+    let add
+    camera.lookAt(0, 5, 0);
+    if(camera.position.z === -200){
+        add = .5
+    }else if(camera.position.z === 700){
+        add = -.5
+    }else{
+        add = -.5
+    }
+    camera.position.z += add
+}
 
 function checkBounds(pos){
     if(pos.z > 1000){
@@ -1474,8 +1504,14 @@ function animate() {
     var time = performance.now();
     start = requestAnimationFrame(animate);
     // This will give all the PointLock controls
+    let playerPos
     if (controlsEnabled) {
-        
+        if(intro){
+            camera.position.x = 0
+            camera.position.y = 10
+            camera.position.z = 700
+            intro = false
+        }
         
         if(player.start){
             instructionText()
@@ -1644,6 +1680,10 @@ function animate() {
             }
         }
         prevTime = time;
+    }
+    if(intro){
+        
+        animateCamera()
     }
     
         renderer.render(scene, camera);
